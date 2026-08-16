@@ -4,6 +4,7 @@
 !.nojekyll
 !robots.txt
 !sitemap.xml
+!generate_seo_pages.py
 !README.md
 !RECOVERY_REPORT.md
 !429_PENDING_URLS.md
@@ -11,6 +12,10 @@
 !styles.css
 !script.js
 !products.js
+!thuong-hieu/**
+!thuong-hieu/
+!danh-muc/**
+!danh-muc/
 
 !assets/
 !assets/**
