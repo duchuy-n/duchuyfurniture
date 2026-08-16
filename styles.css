@@ -9,7 +9,7 @@
   --gold: #c48b2d;
   --green: #0c7a5a;
   --shadow: 0 16px 40px rgba(28, 36, 48, 0.1);
-  --font-sans: "Be Vietnam Pro", Arial, Helvetica, sans-serif;
+  --font-sans: "Inter", "Noto Sans", Arial, Helvetica, sans-serif;
 }
 
 * {
@@ -37,6 +37,13 @@ a {
   color: inherit;
   text-decoration: none;
 }
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
 
 .container {
   width: min(1160px, calc(100% - 32px));
@@ -373,7 +380,8 @@ h2 {
   background: #fff;
   color: #344054;
   padding: 8px 13px;
-  font-weight: 800;
+  font-weight: 700;
+  line-height: 1.2;
   cursor: pointer;
 }
 
