@@ -1931,3 +1931,42 @@ h2 {
     font-size: 16px;
   }
 }
+
+
+/* static seo expansion */
+.seo-growth { background: #f7fbff; }
+.seo-growth-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.seo-growth-grid a { display: grid; gap: 8px; min-height: 132px; border: 1px solid var(--line); border-radius: 8px; padding: 18px; background: #fff; color: var(--ink); text-decoration: none; box-shadow: 0 14px 32px rgba(16, 24, 40, 0.05); transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
+.seo-growth-grid a:hover, .seo-growth-grid a:focus-visible { border-color: var(--brand); box-shadow: var(--shadow); transform: translateY(-2px); outline: 0; }
+.seo-growth-grid strong { color: var(--brand); font-size: 17px; font-weight: 900; }
+.seo-growth-grid span { color: var(--muted); line-height: 1.55; }
+.product-card-media > a.product-image-link { display: block; color: inherit; text-decoration: none; }
+.product-card h3 a, .seo-product-card h2 a { color: inherit; text-decoration: none; }
+.product-card h3 a:hover, .seo-product-card h2 a:hover { color: var(--brand); }
+.product-detail-hero { background: linear-gradient(135deg, #fff 0%, #eef6ff 55%, #fff4ef 100%); }
+.product-detail-grid { display: grid; grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr); gap: clamp(24px, 4vw, 56px); align-items: center; min-height: 560px; padding-top: 54px; padding-bottom: 54px; }
+.product-detail-media { border: 1px solid var(--line); border-radius: 8px; padding: 18px; background: #fff; box-shadow: var(--shadow); }
+.product-detail-media img { width: 100%; aspect-ratio: 1 / 1; object-fit: contain; }
+.product-detail-info h1 { margin: 0 0 14px; color: var(--ink); font-size: clamp(32px, 4.8vw, 58px); line-height: 1.08; }
+.product-detail-code { color: var(--muted); font-size: 17px; }
+.product-detail-price { display: block; margin: 18px 0 4px; color: var(--danger); font-size: clamp(30px, 4vw, 46px); font-weight: 900; }
+.product-detail-vat { color: var(--muted); }
+.product-detail-specs { display: grid; gap: 10px; margin: 22px 0; }
+.product-detail-specs div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 14px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.product-detail-specs dt { color: var(--muted); font-weight: 800; }
+.product-detail-specs dd { margin: 0; color: var(--ink); font-weight: 700; }
+.article-page { background: #fff; }
+.article-container { max-width: 900px; padding-top: 64px; padding-bottom: 64px; }
+.article-container h1 { margin: 0 0 16px; color: var(--ink); font-size: clamp(34px, 5vw, 62px); line-height: 1.08; }
+.article-lead { color: #475467; font-size: 19px; line-height: 1.75; }
+.article-updated { color: var(--muted); font-weight: 800; }
+.article-container h2 { margin-top: 34px; color: var(--brand-dark); font-size: 26px; }
+.article-container p { color: #344054; line-height: 1.75; }
+.article-faq details { border: 1px solid var(--line); border-radius: 8px; margin-top: 10px; padding: 14px 16px; background: #f8fafc; }
+.article-faq summary { cursor: pointer; color: var(--ink); font-weight: 900; }
+.floating-cta { position: fixed; right: 18px; bottom: 18px; z-index: 60; display: flex; gap: 8px; border: 1px solid rgba(255,255,255,0.5); border-radius: 999px; padding: 8px; background: rgba(255,255,255,0.94); box-shadow: var(--shadow); backdrop-filter: blur(14px); }
+.floating-cta a { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; border-radius: 999px; padding: 10px 14px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 900; text-decoration: none; }
+.floating-cta a:nth-child(2) { background: #008fe5; }
+.floating-cta a:nth-child(3) { background: #c1121f; }
+@media (max-width: 900px) { .seo-growth-grid, .product-detail-grid { grid-template-columns: 1fr; } .product-detail-grid { min-height: auto; } }
+@media (max-width: 520px) { .seo-growth-grid a { min-height: auto; } .product-detail-specs div { grid-template-columns: 1fr; gap: 4px; } .floating-cta { right: 10px; left: 10px; bottom: 10px; justify-content: center; border-radius: 18px; } .floating-cta a { flex: 1; padding: 10px 8px; font-size: 13px; } }

@@ -25,3 +25,7 @@ crawl-output/*
 !crawl-output/product-images/
 !crawl-output/product-images/**
 
+!san-pham/
+!san-pham/**
+!bai-viet/
+!bai-viet/**

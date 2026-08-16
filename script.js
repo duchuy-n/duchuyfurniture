@@ -65,6 +65,17 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
+function slugifyForUrl(value) {
+  const slug = normalizeText(value)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "san-pham";
+}
+
+function productDetailPath(product) {
+  return `san-pham/${slugifyForUrl([product.title, product.code, product.id].join("-"))}/`;
+}
+
 function compactText(value, maxLength = 185) {
   const text = String(value || "").replace(/\s+/g, " ").trim();
   if (text.length <= maxLength) return text;
@@ -124,17 +135,19 @@ function productCardMarkup(product, index) {
   const image = product.image || "assets/images/products/ban-giam-doc.jpg";
   const badge = product.badge || "Chính hãng";
   const category = product.category || "khac";
+  const href = productDetailPath(product);
 
   return `
     <article class="product-card" data-category="${escapeHtml(category)}" data-name="${escapeHtml(title)}" data-title="${escapeHtml(title)}" data-description="${escapeHtml(description)}" data-price="${Number(product.price) || 0}" data-code="${escapeHtml(code)}" data-spec="${escapeHtml(size)}" data-badge="${escapeHtml(badge)}" data-popularity="${product.popularity || index}" data-vat="${escapeHtml(product.vatPrice || "")}" data-warranty="${escapeHtml(product.warranty || "")}" data-source="${escapeHtml(product.sourceUrl || "")}" tabindex="0">
       <div class="product-card-media">
-        <img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy">
+        <a class="product-image-link" href="${escapeHtml(href)}" aria-label="Xem chi tiết ${escapeHtml(title)}"><img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy"></a>
         <span class="product-badge">${escapeHtml(badge)}</span>
         <div class="product-hover">
           <strong>${escapeHtml(priceText)}</strong>
           <span>${escapeHtml(code)} · ${escapeHtml(size)}</span>
           <div class="product-actions">
             <a href="tel:0912425222">Gọi báo giá</a>
+            <a href="${escapeHtml(href)}">Chi tiết</a>
             <button type="button" data-quick-view>Xem nhanh</button>
           </div>
         </div>
@@ -143,7 +156,7 @@ function productCardMarkup(product, index) {
         <span class="product-price">${escapeHtml(priceText)}</span>
         <span class="product-code">${escapeHtml(code)}</span>
       </div>
-      <h3>${escapeHtml(title)}</h3>
+      <h3><a href="${escapeHtml(href)}">${escapeHtml(title)}</a></h3>
       <div class="product-spec-line">${escapeHtml(size)}</div>
       <p>${escapeHtml(description)}</p>
       <span class="product-category-path">${escapeHtml(categoryPath)}</span>
@@ -280,6 +293,7 @@ productGrid?.addEventListener("click", (event) => {
 
 productGrid?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
+  if (event.target.closest("a, button, input, select")) return;
   const card = event.target.closest(".product-card");
   if (card) openProductModal(card);
 });
