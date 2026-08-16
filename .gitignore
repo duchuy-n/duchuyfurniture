@@ -2,6 +2,8 @@
 
 !.gitignore
 !.nojekyll
+!robots.txt
+!sitemap.xml
 !README.md
 !RECOVERY_REPORT.md
 !429_PENDING_URLS.md
@@ -17,3 +19,4 @@
 crawl-output/*
 !crawl-output/product-images/
 !crawl-output/product-images/**
+

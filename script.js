@@ -319,7 +319,23 @@ document.addEventListener("keydown", (event) => {
   closeNavMenu();
 });
 
+const initialSearchQuery = new URLSearchParams(window.location.search).get("search");
+if (initialSearchQuery && search) {
+  search.value = initialSearchQuery;
+}
+
+const brandQueryButtons = Array.from(document.querySelectorAll("[data-product-query]"));
+brandQueryButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    activeFilter = "all";
+    activeMenuQuery = "";
+    if (search) search.value = button.dataset.productQuery || "";
+    tabs.forEach((tab) => tab.classList.toggle("active", (tab.dataset.filter || "all") === "all"));
+    catalogMenu?.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
+    renderCatalog(true);
+    document.querySelector("#products")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+});
 buildCatalogMenu();
 renderCatalog(true);
-
 

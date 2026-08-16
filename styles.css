@@ -1634,3 +1634,63 @@ h2 {
   }
 }
 
+
+.brand-seo {
+  background: #fff;
+  border-top: 1px solid var(--line);
+}
+
+.brand-seo-copy {
+  max-width: 920px;
+  margin: -8px 0 22px;
+  color: #475467;
+}
+
+.brand-keyword-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.brand-keyword-grid button {
+  min-height: 142px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  background: #fff;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.brand-keyword-grid button:hover,
+.brand-keyword-grid button:focus-visible {
+  border-color: var(--brand);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+  outline: 0;
+}
+
+.brand-keyword-grid strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--brand);
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.brand-keyword-grid span {
+  color: var(--muted);
+  font-size: 14px;
+}
+@media (max-width: 760px) {
+  .brand-keyword-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .brand-keyword-grid button {
+    min-height: auto;
+  }
+}
+
