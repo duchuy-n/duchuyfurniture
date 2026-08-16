@@ -9,6 +9,7 @@
   --gold: #c48b2d;
   --green: #0c7a5a;
   --shadow: 0 16px 40px rgba(28, 36, 48, 0.1);
+  --font-sans: "Be Vietnam Pro", Arial, Helvetica, sans-serif;
 }
 
 * {
@@ -22,7 +23,7 @@ html {
 body {
   margin: 0;
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
   background: var(--surface);
   line-height: 1.6;
 }
@@ -828,6 +829,7 @@ h2 {
   color: var(--brand);
   font-size: 18px;
   font-weight: 900;
+  font-variant-numeric: tabular-nums;
 }
 
 .product-code {
