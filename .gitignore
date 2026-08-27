@@ -29,3 +29,5 @@ crawl-output/*
 !san-pham/**
 !bai-viet/
 !bai-viet/**
+!tu-khoa/
+!tu-khoa/**
