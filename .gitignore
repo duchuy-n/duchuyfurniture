@@ -33,3 +33,8 @@ crawl-output/*
 !tu-khoa/**
 !dang-nhap/
 !dang-nhap/**
+!quan-tri/
+!quan-tri/**
+!api/
+!api/**
+!ADMIN_SETUP.md

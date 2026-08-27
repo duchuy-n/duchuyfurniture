@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản trị sản phẩm | Nội thất Đức Huy</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="../assets/images/logo-theone.jpg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="admin.css">
+  </head>
+  <body class="admin-page">
+    <header class="admin-header">
+      <a class="brand" href="../" aria-label="Về trang chủ Nội thất Đức Huy">
+        <img src="../assets/images/logo-theone.jpg" alt="Logo The One">
+        <span>
+          <strong>Nội thất Đức Huy</strong>
+          <small>Quản trị sản phẩm nháp</small>
+        </span>
+      </a>
+      <div class="admin-header-actions">
+        <a class="admin-link" href="../#products">Xem web</a>
+        <button class="admin-link" type="button" id="logoutButton">Đăng xuất</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <section class="admin-hero" aria-labelledby="adminTitle">
+        <div>
+          <p class="eyebrow">Product workspace</p>
+          <h1 id="adminTitle">Thêm và sửa sản phẩm</h1>
+          <p>Chỉnh dữ liệu ở đây sẽ lưu nháp trên trình duyệt. Khi ưng rồi bấm xuất file dữ liệu để cập nhật lại website hoặc nối backend ở bước sau.</p>
+        </div>
+        <div class="admin-status" id="adminStatus">Chưa có thay đổi mới.</div>
+      </section>
+
+      <section class="admin-stats" aria-label="Thống kê sản phẩm">
+        <article><span>Tổng sản phẩm</span><strong id="statTotal">0</strong></article>
+        <article><span>Có giá</span><strong id="statPriced">0</strong></article>
+        <article><span>Có ảnh</span><strong id="statImages">0</strong></article>
+        <article><span>Nháp đã sửa</span><strong id="statDraft">0</strong></article>
+      </section>
+
+      <section class="admin-workspace">
+        <aside class="admin-list-panel" aria-label="Danh sách sản phẩm">
+          <div class="admin-tools">
+            <label class="admin-search" for="adminSearch">
+              <span>Tìm sản phẩm</span>
+              <input id="adminSearch" type="search" placeholder="Mã, tên, danh mục...">
+            </label>
+            <label class="admin-filter" for="adminCategory">
+              <span>Nhóm</span>
+              <select id="adminCategory">
+                <option value="all">Tất cả</option>
+                <option value="ban">Bàn</option>
+                <option value="ghe">Ghế</option>
+                <option value="tu">Tủ</option>
+                <option value="khac">Khác</option>
+              </select>
+            </label>
+          </div>
+          <div class="admin-list-actions">
+            <button class="btn primary" type="button" id="newProductButton">Thêm sản phẩm</button>
+            <button class="btn outline" type="button" id="resetDraftButton">Khôi phục gốc</button>
+          </div>
+          <p class="admin-count" id="adminCount">Đang tải sản phẩm...</p>
+          <div class="admin-product-list" id="adminProductList" tabindex="0"></div>
+        </aside>
+
+        <section class="admin-editor" aria-labelledby="editorTitle">
+          <div class="admin-editor-heading">
+            <div>
+              <p class="eyebrow">Editor</p>
+              <h2 id="editorTitle">Thông tin sản phẩm</h2>
+            </div>
+            <button class="btn outline" type="button" id="duplicateButton">Nhân bản</button>
+          </div>
+
+          <form id="productEditorForm" class="admin-form">
+            <label>
+              <span>Tên sản phẩm</span>
+              <input name="title" type="text" required>
+            </label>
+            <div class="admin-form-grid">
+              <label>
+                <span>Mã sản phẩm</span>
+                <input name="code" type="text" required>
+              </label>
+              <label>
+                <span>Giá bán</span>
+                <input name="price" type="text" inputmode="numeric" placeholder="vd: 1250000">
+              </label>
+            </div>
+            <div class="admin-form-grid">
+              <label>
+                <span>Giá gồm VAT</span>
+                <input name="vatPrice" type="text" placeholder="vd: 1.375.000 VNĐ (Đã bao gồm VAT)">
+              </label>
+              <label>
+                <span>Nhóm</span>
+                <select name="category">
+                  <option value="ban">Bàn</option>
+                  <option value="ghe">Ghế</option>
+                  <option value="tu">Tủ</option>
+                  <option value="khac">Khác</option>
+                </select>
+              </label>
+            </div>
+            <div class="admin-form-grid">
+              <label>
+                <span>Nhãn</span>
+                <input name="badge" type="text" placeholder="vd: Bàn làm việc">
+              </label>
+              <label>
+                <span>Kích thước</span>
+                <input name="size" type="text" placeholder="W1200 x D600 x H750 mm">
+              </label>
+            </div>
+            <label>
+              <span>Đường dẫn ảnh</span>
+              <input name="image" type="text" placeholder="crawl-output/product-images/...jpg hoặc assets/images/...jpg">
+            </label>
+            <label>
+              <span>Danh mục SEO</span>
+              <input name="categoryPath" type="text" placeholder="ban lam viec > ban nhan vien">
+            </label>
+            <label>
+              <span>Bảo hành</span>
+              <input name="warranty" type="text" placeholder="Sản phẩm bảo hành 12 tháng">
+            </label>
+            <label>
+              <span>Mô tả</span>
+              <textarea name="description" rows="6" placeholder="Mô tả chất liệu, màu sắc, công năng, vận chuyển..."></textarea>
+            </label>
+            <label>
+              <span>URL nguồn/tham khảo</span>
+              <input name="sourceUrl" type="url" placeholder="https://...">
+            </label>
+
+            <div class="admin-preview" id="adminPreview" aria-label="Xem trước sản phẩm"></div>
+
+            <div class="admin-form-actions">
+              <button class="btn primary" type="submit">Lưu nháp sản phẩm</button>
+              <button class="btn outline" type="button" id="exportButton">Xuất products.js</button>
+              <button class="btn danger" type="button" id="deleteButton">Xóa khỏi nháp</button>
+            </div>
+          </form>
+        </section>
+      </section>
+    </main>
+
+    <script src="../products.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>
