@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đăng nhập quản trị | Nội thất Đức Huy</title>
+    <meta name="description" content="Đăng nhập khu quản trị Nội thất Đức Huy. Trang này chỉ là giao diện chuẩn bị cho hệ thống quản trị sản phẩm.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="https://duchuyfurniture.vercel.app/dang-nhap/">
+    <link rel="icon" href="../assets/images/logo-theone.jpg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+  </head>
+  <body class="login-page">
+    <header class="login-topbar">
+      <a class="brand" href="../" aria-label="Về trang chủ Nội thất Đức Huy">
+        <img src="../assets/images/logo-theone.jpg" alt="Logo The One">
+        <span>
+          <strong>Nội thất Đức Huy</strong>
+          <small>Khu quản trị sản phẩm</small>
+        </span>
+      </a>
+      <a class="login-home-link" href="../">Về trang bán hàng</a>
+    </header>
+
+    <main class="login-main">
+      <section class="login-shell" aria-labelledby="loginTitle">
+        <div class="login-copy">
+          <p class="eyebrow">Admin workspace</p>
+          <h1 id="loginTitle">Đăng nhập quản trị Nội thất Đức Huy</h1>
+          <p>Giao diện này được chuẩn bị cho bước tiếp theo: thêm, sửa, ẩn hiện sản phẩm và cập nhật giá. Bản static hiện tại chưa lưu mật khẩu thật trong code public.</p>
+          <div class="login-benefits" aria-label="Tính năng quản trị dự kiến">
+            <span>Quản lý sản phẩm</span>
+            <span>Cập nhật giá</span>
+            <span>Ảnh & thông số</span>
+            <span>SEO sản phẩm</span>
+          </div>
+        </div>
+
+        <form class="login-card" id="adminLoginForm" novalidate>
+          <div class="login-card-heading">
+            <span>Đăng nhập</span>
+            <strong>Quản trị website</strong>
+          </div>
+
+          <label class="form-field" for="loginIdentity">
+            <span>Email hoặc số điện thoại</span>
+            <input id="loginIdentity" name="identity" type="text" autocomplete="username" placeholder="vd: noithatduchuy@gmail.com">
+          </label>
+
+          <label class="form-field" for="loginPassword">
+            <span>Mật khẩu</span>
+            <div class="password-field">
+              <input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu">
+              <button type="button" id="togglePassword" aria-label="Hiện mật khẩu">Hiện</button>
+            </div>
+          </label>
+
+          <div class="login-options">
+            <label>
+              <input type="checkbox" name="remember">
+              <span>Ghi nhớ thiết bị này</span>
+            </label>
+            <a href="mailto:noithatduchuy@gmail.com">Quên mật khẩu?</a>
+          </div>
+
+          <button class="btn primary login-submit" type="submit">Tiếp tục</button>
+          <p class="login-message" id="loginMessage" role="status" aria-live="polite"></p>
+
+          <div class="login-note">
+            <strong>Lưu ý bảo mật</strong>
+            <span>Muốn thêm sản phẩm thật cần backend riêng, đăng nhập bảo mật và phân quyền. Không nên để mật khẩu admin trong frontend.</span>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <script src="login.js"></script>
+  </body>
+</html>
+

@@ -31,3 +31,5 @@ crawl-output/*
 !bai-viet/**
 !tu-khoa/
 !tu-khoa/**
+!dang-nhap/
+!dang-nhap/**
