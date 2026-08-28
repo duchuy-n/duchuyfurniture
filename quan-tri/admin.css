@@ -49,6 +49,44 @@
   background: var(--brand);
 }
 
+
+.admin-gate {
+  display: grid;
+  min-height: calc(100vh - 78px);
+  place-items: center;
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.admin-gate > div {
+  width: min(560px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: clamp(24px, 5vw, 42px);
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.admin-gate h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(30px, 5vw, 48px);
+  line-height: 1.08;
+}
+
+.admin-gate p:not(.eyebrow) {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.admin-page.admin-locked .admin-main {
+  display: none;
+}
+
+.admin-page:not(.admin-locked) .admin-gate {
+  display: none;
+}
 .admin-main {
   width: min(1440px, calc(100% - 32px));
   margin: 0 auto;
@@ -368,7 +406,9 @@
     grid-template-columns: 1fr;
   }
 
-  .admin-main {
+
+
+.admin-main {
     width: min(100% - 24px, 1440px);
     padding-top: 20px;
   }

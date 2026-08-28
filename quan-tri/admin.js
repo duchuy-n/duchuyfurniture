@@ -330,10 +330,11 @@ async function bootAdmin() {
       return;
     }
   } catch {
-    setStatus("Chưa kết nối được API đăng nhập. Hãy chạy bằng Vercel hoặc dev server có hỗ trợ /api.", "warn");
+    window.location.replace("../dang-nhap/");
     return;
   }
 
+  document.body.classList.remove("admin-locked");
   updateStats();
   renderList();
   fillForm(selectedProduct());

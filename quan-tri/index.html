@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="../styles.css">
     <link rel="stylesheet" href="admin.css">
   </head>
-  <body class="admin-page">
+  <body class="admin-page admin-locked">
     <header class="admin-header">
       <a class="brand" href="../" aria-label="Về trang chủ Nội thất Đức Huy">
         <img src="../assets/images/logo-theone.jpg" alt="Logo The One">
@@ -26,6 +26,14 @@
         <button class="admin-link" type="button" id="logoutButton">Đăng xuất</button>
       </div>
     </header>
+
+    <section class="admin-gate" id="adminGate" aria-live="polite">
+      <div>
+        <p class="eyebrow">Đang xác thực</p>
+        <h1>Kiểm tra quyền truy cập</h1>
+        <p>Trang quản trị chỉ mở sau khi đăng nhập đúng tài khoản admin.</p>
+      </div>
+    </section>
 
     <main class="admin-main">
       <section class="admin-hero" aria-labelledby="adminTitle">
