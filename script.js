@@ -83,7 +83,7 @@ function compactText(value, maxLength = 185) {
 }
 
 const productGrid = document.querySelector("#productGrid");
-const recoveredProducts = Array.isArray(window.recoveredProducts) ? window.recoveredProducts : [];
+let recoveredProducts = Array.isArray(window.recoveredProducts) ? window.recoveredProducts : [];
 const tabs = Array.from(document.querySelectorAll(".category-tab"));
 const search = document.querySelector("#productSearch");
 const sort = document.querySelector("#productSort");
@@ -135,7 +135,7 @@ function productCardMarkup(product, index) {
   const image = product.image || "assets/images/products/ban-giam-doc.jpg";
   const badge = product.badge || "Chính hãng";
   const category = product.category || "khac";
-  const href = productDetailPath(product);
+  const href = product.detailPath || productDetailPath(product);
 
   return `
     <article class="product-card" data-category="${escapeHtml(category)}" data-name="${escapeHtml(title)}" data-title="${escapeHtml(title)}" data-description="${escapeHtml(description)}" data-price="${Number(product.price) || 0}" data-code="${escapeHtml(code)}" data-spec="${escapeHtml(size)}" data-badge="${escapeHtml(badge)}" data-popularity="${product.popularity || index}" data-vat="${escapeHtml(product.vatPrice || "")}" data-warranty="${escapeHtml(product.warranty || "")}" data-source="${escapeHtml(product.sourceUrl || "")}" tabindex="0">
@@ -352,4 +352,3 @@ brandQueryButtons.forEach((button) => {
 });
 buildCatalogMenu();
 renderCatalog(true);
-

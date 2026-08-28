@@ -40,7 +40,7 @@
         <div>
           <p class="eyebrow">Product workspace</p>
           <h1 id="adminTitle">Thêm và sửa sản phẩm</h1>
-          <p>Chỉnh dữ liệu ở đây sẽ lưu nháp trên trình duyệt. Khi ưng rồi bấm xuất file dữ liệu để cập nhật lại website hoặc nối backend ở bước sau.</p>
+          <p>Mẹ chỉ cần tìm sản phẩm, sửa thông tin rồi bấm Lưu lên web. Nếu Firebase còn trống, bấm Đưa sản phẩm cũ lên Firebase một lần.</p>
         </div>
         <div class="admin-status" id="adminStatus">Chưa có thay đổi mới.</div>
       </section>
@@ -49,7 +49,7 @@
         <article><span>Tổng sản phẩm</span><strong id="statTotal">0</strong></article>
         <article><span>Có giá</span><strong id="statPriced">0</strong></article>
         <article><span>Có ảnh</span><strong id="statImages">0</strong></article>
-        <article><span>Nháp đã sửa</span><strong id="statDraft">0</strong></article>
+        <article><span>Đã sửa phiên này</span><strong id="statDraft">0</strong></article>
       </section>
 
       <section class="admin-workspace">
@@ -72,7 +72,8 @@
           </div>
           <div class="admin-list-actions">
             <button class="btn primary" type="button" id="newProductButton">Thêm sản phẩm</button>
-            <button class="btn outline" type="button" id="resetDraftButton">Khôi phục gốc</button>
+            <button class="btn outline" type="button" id="reloadButton">Tải lại dữ liệu</button>
+            <button class="btn outline" type="button" id="seedButton">Đưa sản phẩm cũ lên Firebase</button>
           </div>
           <p class="admin-count" id="adminCount">Đang tải sản phẩm...</p>
           <div class="admin-product-list" id="adminProductList" tabindex="0"></div>
@@ -151,9 +152,8 @@
             <div class="admin-preview" id="adminPreview" aria-label="Xem trước sản phẩm"></div>
 
             <div class="admin-form-actions">
-              <button class="btn primary" type="submit">Lưu nháp sản phẩm</button>
-              <button class="btn outline" type="button" id="exportButton">Xuất products.js</button>
-              <button class="btn danger" type="button" id="deleteButton">Xóa khỏi nháp</button>
+              <button class="btn primary" type="submit">Lưu lên web</button>
+              <button class="btn danger" type="button" id="deleteButton">Ẩn sản phẩm</button>
             </div>
           </form>
         </section>
