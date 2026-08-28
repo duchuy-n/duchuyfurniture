@@ -2261,3 +2261,60 @@ h2 {
     flex-direction: column;
   }
 }
+/* simple login override */
+.simple-login-page {
+  background: #f6f8fb;
+}
+
+.simple-login-main {
+  min-height: 100vh;
+  align-items: center;
+  padding: 24px 16px;
+}
+
+.simple-login-card {
+  width: min(420px, 100%);
+  margin: 0 auto;
+  gap: 16px;
+  padding: clamp(24px, 5vw, 34px);
+}
+
+.simple-login-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.simple-login-logo img {
+  width: 156px;
+  height: auto;
+  object-fit: contain;
+}
+
+.simple-login-heading {
+  justify-items: center;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.simple-login-heading strong {
+  font-size: 26px;
+}
+
+.simple-login-heading span {
+  color: var(--muted);
+  font-size: 14px;
+  text-transform: none;
+}
+
+@media (max-width: 520px) {
+  .simple-login-main {
+    min-height: 100vh;
+    align-items: center;
+    padding: 18px 12px;
+  }
+
+  .simple-login-card {
+    padding: 22px 18px;
+  }
+}
