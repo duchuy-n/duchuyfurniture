@@ -197,7 +197,41 @@ async function hideProduct(id) {
   return hiddenProduct;
 }
 
+async function checkGithubStatus() {
+  const config = githubConfig();
+  const configured = githubConfigured(config);
+  const tokenLooksFineGrained = config.token.startsWith("github_pat_");
+  const result = {
+    configured,
+    tokenLooksFineGrained,
+    owner: config.owner,
+    repo: config.repo,
+    branch: config.branch,
+    canReadProductsFile: false,
+    productCount: 0
+  };
+
+  if (!configured) return result;
+
+  try {
+    const file = await readGithubProductsFile();
+    result.canReadProductsFile = true;
+    result.productCount = file.products.length;
+    return result;
+  } catch (error) {
+    error.details = {
+      ...(error.details || {}),
+      configured,
+      tokenLooksFineGrained,
+      owner: config.owner,
+      repo: config.repo,
+      branch: config.branch
+    };
+    throw error;
+  }
+}
 module.exports = {
+  checkGithubStatus,
   githubConfigured,
   hideProduct,
   listProducts: readStaticProducts,
