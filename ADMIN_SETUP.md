@@ -1,10 +1,10 @@
-# Cấu hình đăng nhập quản trị và Firebase
+# Cấu hình đăng nhập quản trị, Firebase và ImageKit
 
-Khu `/dang-nhap/` và `/quan-tri/` dùng API serverless trong thư mục `/api`. Không có mật khẩu thật hoặc khóa Firebase nào nằm trong HTML/JS public.
+Khu `/dang-nhap/` và `/quan-tri/` dùng API serverless trong thư mục `/api`. Không có mật khẩu thật, khóa Firebase hoặc khóa ImageKit nào nằm trong HTML/JS public.
 
 ## 1. Biến đăng nhập admin trên Vercel
 
-- `ADMIN_USERNAME`: tên đăng nhập, ví dụ `noithatduchuy`.
+- `ADMIN_USERNAME`: tên đăng nhập admin.
 - `ADMIN_PASSWORD_SHA256`: hash SHA-256 dạng hex của mật khẩu.
 - `ADMIN_SESSION_SECRET`: chuỗi bí mật dài, dùng để ký cookie đăng nhập.
 
@@ -21,16 +21,17 @@ Tạo session secret:
 -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 64 | ForEach-Object {[char]$_})
 ```
 
-## 2. Biến Firebase/Firestore/Storage trên Vercel
+## 2. Biến Firebase/Firestore trên Vercel
 
-Thêm tiếp 4 biến này để web tự đưa sản phẩm cũ lên Firebase, lưu sản phẩm mới và tải ảnh mẹ chọn từ máy:
+Firestore dùng để lưu data sản phẩm: tên, giá, mã, mô tả, link ảnh. Không dùng Firebase Storage nữa.
+
+Thêm 3 biến này:
 
 - `FIREBASE_PROJECT_ID`: ID project Firebase, ví dụ `duchuyfurniture`.
 - `FIREBASE_CLIENT_EMAIL`: email của service account, thường có dạng `firebase-adminsdk-...@...iam.gserviceaccount.com`.
 - `FIREBASE_PRIVATE_KEY`: private key trong file service account JSON, gồm cả dòng `-----BEGIN PRIVATE KEY-----` và `-----END PRIVATE KEY-----`.
-- `FIREBASE_STORAGE_BUCKET`: bucket Storage của Firebase, thường có dạng `ten-project.appspot.com` hoặc `ten-project.firebasestorage.app`.
 
-Cách lấy các giá trị này trong Firebase Console:
+Cách lấy trong Firebase Console:
 
 1. Vào Firebase project.
 2. Bấm bánh răng `Project settings`.
@@ -43,11 +44,31 @@ Cách lấy các giá trị này trong Firebase Console:
    - `project_id` vào `FIREBASE_PROJECT_ID`
    - `client_email` vào `FIREBASE_CLIENT_EMAIL`
    - `private_key` vào `FIREBASE_PRIVATE_KEY`
-9. Vào `Storage` trong Firebase Console, tạo bucket nếu chưa có, rồi copy tên bucket vào `FIREBASE_STORAGE_BUCKET`.
 
 Không commit file JSON service account vào GitHub.
 
-## 3. Firestore Rules khuyến nghị
+## 3. Biến ImageKit trên Vercel
+
+ImageKit dùng để lưu ảnh mẹ upload từ máy. Không cần Firebase Storage/Blaze cho ảnh nữa.
+
+Thêm biến bắt buộc:
+
+- `IMAGEKIT_PRIVATE_KEY`: private API key của ImageKit, lấy trong ImageKit Dashboard.
+
+Có thể thêm biến tùy chọn:
+
+- `IMAGEKIT_FOLDER`: thư mục lưu ảnh trên ImageKit. Nếu không nhập, web tự dùng `/duchuy-products`.
+
+Cách lấy private key ImageKit:
+
+1. Tạo tài khoản hoặc đăng nhập ImageKit.
+2. Vào ImageKit Dashboard.
+3. Vào `Developer options` hoặc `API keys`.
+4. Copy `Private key` vào `IMAGEKIT_PRIVATE_KEY` trên Vercel.
+
+Chỉ nhập private key ở Vercel Environment Variables. Không đưa private key vào code, HTML, hoặc JavaScript public.
+
+## 4. Firestore Rules khuyến nghị
 
 Vì web đọc/ghi Firestore qua Vercel API server-side, có thể khóa client trực tiếp:
 
@@ -64,7 +85,7 @@ service cloud.firestore {
 
 Service account của Vercel vẫn ghi được nhờ quyền IAM, còn người ngoài trình duyệt không ghi trực tiếp được.
 
-## 4. Sau khi thêm biến
+## 5. Sau khi thêm biến
 
 Sau khi thêm hoặc sửa Environment Variables trên Vercel, vào `Deployments` và bấm `Redeploy` bản mới nhất.
 

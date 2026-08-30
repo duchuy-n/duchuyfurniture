@@ -1,8 +1,22 @@
 const { verifySession } = require("./_auth");
-const { getAccessToken, slugify } = require("./_firestore");
+const { slugify } = require("./_firestore");
 
-function storageBucket() {
-  return process.env.FIREBASE_STORAGE_BUCKET || "";
+const IMAGEKIT_UPLOAD_URL = "https://upload.imagekit.io/api/v1/files/upload";
+
+function normalizeFolder(value) {
+  const folder = String(value || "/duchuy-products").trim() || "/duchuy-products";
+  return folder.startsWith("/") ? folder : `/${folder}`;
+}
+
+function imageKitConfig() {
+  return {
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
+    folder: normalizeFolder(process.env.IMAGEKIT_FOLDER)
+  };
+}
+
+function imageKitConfigured(config = imageKitConfig()) {
+  return Boolean(config.privateKey);
 }
 
 function parseBody(req) {
@@ -43,7 +57,43 @@ function parseImage(body) {
 
   const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
   const safeName = slugify(fileName.replace(/\.[^.]+$/, ""));
-  return { buffer, contentType, objectName: `product-images/${Date.now()}-${safeName}.${ext}` };
+  return {
+    base64,
+    contentType,
+    fileName: `${Date.now()}-${safeName}.${ext}`
+  };
+}
+
+async function uploadToImageKit(image, config) {
+  const form = new FormData();
+  form.append("file", image.base64);
+  form.append("fileName", image.fileName);
+  form.append("folder", config.folder);
+  form.append("useUniqueFileName", "true");
+  form.append("tags", "duchuy,product");
+
+  const response = await fetch(IMAGEKIT_UPLOAD_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${config.privateKey}:`).toString("base64")}`
+    },
+    body: form
+  });
+
+  let data = null;
+  try {
+    data = await response.json();
+  } catch {
+    data = null;
+  }
+
+  if (!response.ok) {
+    const error = new Error(data?.message || "imagekit_upload_failed");
+    error.statusCode = response.status;
+    throw error;
+  }
+
+  return data;
 }
 
 module.exports = async function handler(req, res) {
@@ -55,34 +105,29 @@ module.exports = async function handler(req, res) {
   const session = verifySession(req);
   if (!session) return res.status(401).json({ error: "not_authenticated" });
 
-  const bucket = storageBucket();
-  if (!bucket) return res.status(503).json({ error: "storage_not_configured" });
+  const config = imageKitConfig();
+  if (!imageKitConfigured(config)) return res.status(503).json({ error: "imagekit_not_configured" });
 
   try {
     const body = await parseBody(req);
     const image = parseImage(body);
-    const token = await getAccessToken();
-    const url = `https://storage.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucket)}/o?uploadType=media&name=${encodeURIComponent(image.objectName)}`;
-    const uploadResponse = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": image.contentType,
-        "Cache-Control": "public, max-age=31536000, immutable"
-      },
-      body: image.buffer
-    });
+    const uploaded = await uploadToImageKit(image, config);
+    const imageUrl = uploaded.url || uploaded.thumbnailUrl;
 
-    if (!uploadResponse.ok) {
-      return res.status(uploadResponse.status).json({ error: "storage_upload_failed" });
+    if (!imageUrl) {
+      const error = new Error("imagekit_missing_url");
+      error.statusCode = 502;
+      throw error;
     }
 
     return res.status(200).json({
       ok: true,
-      objectName: image.objectName,
-      image: `/api/image?name=${encodeURIComponent(image.objectName)}`
+      fileId: uploaded.fileId,
+      filePath: uploaded.filePath,
+      image: imageUrl
     });
   } catch (error) {
-    return res.status(error.statusCode || 500).json({ error: error.message || "upload_failed" });
+    const message = error.statusCode === 503 ? error.message : (error.message || "upload_failed");
+    return res.status(error.statusCode || 500).json({ error: message });
   }
 };

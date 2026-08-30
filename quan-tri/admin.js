@@ -261,7 +261,7 @@ async function resizeImageFile(file) {
 async function uploadSelectedImage(file) {
   if (!file) return;
   if (!cloudReady) {
-    setStatus("Chưa kết nối Firebase nên chưa tải ảnh lên được.", "warn");
+    setStatus("Chưa kết nối dữ liệu nên chưa tải ảnh lên được.", "warn");
     return;
   }
 
@@ -283,8 +283,8 @@ async function uploadSelectedImage(file) {
       return;
     }
     const message = error.status === 503
-      ? "Chưa cấu hình Firebase Storage. Thêm FIREBASE_STORAGE_BUCKET trên Vercel rồi redeploy."
-      : "Chưa tải được ảnh. Thử ảnh nhỏ hơn hoặc kiểm tra cấu hình Storage.";
+      ? "Chưa cấu hình ImageKit. Thêm IMAGEKIT_PRIVATE_KEY trên Vercel rồi redeploy."
+      : "Chưa tải được ảnh. Thử ảnh nhỏ hơn hoặc kiểm tra cấu hình ImageKit.";
     setStatus(message, "warn");
   } finally {
     setBusy(false);
