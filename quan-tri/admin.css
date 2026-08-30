@@ -331,6 +331,76 @@
   gap: 14px;
 }
 
+
+.admin-simple-fields {
+  display: grid;
+  gap: 15px;
+}
+
+.admin-image-upload {
+  display: grid;
+  gap: 10px;
+  border: 1px dashed #c9d2df;
+  border-radius: 8px;
+  padding: 14px;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.admin-image-upload:hover,
+.admin-image-upload:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px rgba(195, 22, 43, 0.1);
+}
+
+.admin-image-upload img {
+  width: 100%;
+  max-height: 340px;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.admin-image-upload input {
+  min-height: auto;
+  padding: 10px;
+  background: #fff;
+}
+
+.admin-image-upload small {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.admin-advanced {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.admin-advanced summary {
+  cursor: pointer;
+  padding: 14px;
+  color: var(--brand);
+  font-weight: 900;
+}
+
+.admin-advanced summary:hover,
+.admin-advanced summary:focus-visible {
+  background: #fff;
+  outline: 0;
+}
+
+.admin-advanced-grid {
+  display: grid;
+  gap: 14px;
+  padding: 0 14px 14px;
+}
+
 .admin-preview {
   overflow: hidden;
   border: 1px solid var(--line);

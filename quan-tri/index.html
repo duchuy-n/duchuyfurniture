@@ -18,7 +18,7 @@
         <img src="../assets/images/logo-theone.jpg" alt="Logo The One">
         <span>
           <strong>Nội thất Đức Huy</strong>
-          <small>Quản trị sản phẩm nháp</small>
+          <small>Quản trị sản phẩm</small>
         </span>
       </a>
       <div class="admin-header-actions">
@@ -40,7 +40,7 @@
         <div>
           <p class="eyebrow">Product workspace</p>
           <h1 id="adminTitle">Thêm và sửa sản phẩm</h1>
-          <p>Mẹ chỉ cần tìm sản phẩm, sửa thông tin rồi bấm Lưu lên web. Nếu Firebase còn trống, bấm Đưa sản phẩm cũ lên Firebase một lần.</p>
+          <p>Mẹ chỉ cần chọn ảnh, nhập tên, nhập giá rồi bấm Lưu lên web. Sản phẩm cũ sẽ tự được đưa lên Firebase lần đầu sau khi bạn cấu hình xong.</p>
         </div>
         <div class="admin-status" id="adminStatus">Chưa có thay đổi mới.</div>
       </section>
@@ -72,8 +72,7 @@
           </div>
           <div class="admin-list-actions">
             <button class="btn primary" type="button" id="newProductButton">Thêm sản phẩm</button>
-            <button class="btn outline" type="button" id="reloadButton">Tải lại dữ liệu</button>
-            <button class="btn outline" type="button" id="seedButton">Đưa sản phẩm cũ lên Firebase</button>
+            <button class="btn outline" type="button" id="reloadButton">Làm mới</button>
           </div>
           <p class="admin-count" id="adminCount">Đang tải sản phẩm...</p>
           <div class="admin-product-list" id="adminProductList" tabindex="0"></div>
@@ -89,65 +88,76 @@
           </div>
 
           <form id="productEditorForm" class="admin-form">
-            <label>
-              <span>Tên sản phẩm</span>
-              <input name="title" type="text" required>
-            </label>
-            <div class="admin-form-grid">
-              <label>
-                <span>Mã sản phẩm</span>
-                <input name="code" type="text" required>
+            <div class="admin-simple-fields">
+              <label class="admin-image-upload" for="productImageFile">
+                <span>Ảnh sản phẩm</span>
+                <img id="productImagePreview" src="../assets/images/products/ban-giam-doc.jpg" alt="Xem trước ảnh sản phẩm">
+                <input id="productImageFile" type="file" accept="image/*">
+                <small>Bấm để chọn ảnh từ máy. Ảnh sẽ tự nén nhẹ trước khi tải lên.</small>
               </label>
+              <input name="image" type="hidden">
+
+              <label>
+                <span>Tên sản phẩm</span>
+                <input name="title" type="text" required placeholder="vd: Ghế xoay văn phòng Hòa Phát">
+              </label>
+
               <label>
                 <span>Giá bán</span>
                 <input name="price" type="text" inputmode="numeric" placeholder="vd: 1250000">
               </label>
             </div>
-            <div class="admin-form-grid">
-              <label>
-                <span>Giá gồm VAT</span>
-                <input name="vatPrice" type="text" placeholder="vd: 1.375.000 VNĐ (Đã bao gồm VAT)">
-              </label>
-              <label>
-                <span>Nhóm</span>
-                <select name="category">
-                  <option value="ban">Bàn</option>
-                  <option value="ghe">Ghế</option>
-                  <option value="tu">Tủ</option>
-                  <option value="khac">Khác</option>
-                </select>
-              </label>
-            </div>
-            <div class="admin-form-grid">
-              <label>
-                <span>Nhãn</span>
-                <input name="badge" type="text" placeholder="vd: Bàn làm việc">
-              </label>
-              <label>
-                <span>Kích thước</span>
-                <input name="size" type="text" placeholder="W1200 x D600 x H750 mm">
-              </label>
-            </div>
-            <label>
-              <span>Đường dẫn ảnh</span>
-              <input name="image" type="text" placeholder="crawl-output/product-images/...jpg hoặc assets/images/...jpg">
-            </label>
-            <label>
-              <span>Danh mục SEO</span>
-              <input name="categoryPath" type="text" placeholder="ban lam viec > ban nhan vien">
-            </label>
-            <label>
-              <span>Bảo hành</span>
-              <input name="warranty" type="text" placeholder="Sản phẩm bảo hành 12 tháng">
-            </label>
-            <label>
-              <span>Mô tả</span>
-              <textarea name="description" rows="6" placeholder="Mô tả chất liệu, màu sắc, công năng, vận chuyển..."></textarea>
-            </label>
-            <label>
-              <span>URL nguồn/tham khảo</span>
-              <input name="sourceUrl" type="url" placeholder="https://...">
-            </label>
+
+            <details class="admin-advanced">
+              <summary>Thông tin nâng cao</summary>
+              <div class="admin-advanced-grid">
+                <div class="admin-form-grid">
+                  <label>
+                    <span>Mã sản phẩm</span>
+                    <input name="code" type="text" required>
+                  </label>
+                  <label>
+                    <span>Giá gồm VAT</span>
+                    <input name="vatPrice" type="text" placeholder="vd: 1.375.000 VNĐ (Đã bao gồm VAT)">
+                  </label>
+                </div>
+                <div class="admin-form-grid">
+                  <label>
+                    <span>Nhóm</span>
+                    <select name="category">
+                      <option value="ban">Bàn</option>
+                      <option value="ghe">Ghế</option>
+                      <option value="tu">Tủ</option>
+                      <option value="khac">Khác</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Nhãn</span>
+                    <input name="badge" type="text" placeholder="vd: Bàn làm việc">
+                  </label>
+                </div>
+                <label>
+                  <span>Kích thước</span>
+                  <input name="size" type="text" placeholder="W1200 x D600 x H750 mm">
+                </label>
+                <label>
+                  <span>Danh mục SEO</span>
+                  <input name="categoryPath" type="text" placeholder="ban lam viec > ban nhan vien">
+                </label>
+                <label>
+                  <span>Bảo hành</span>
+                  <input name="warranty" type="text" placeholder="Sản phẩm bảo hành 12 tháng">
+                </label>
+                <label>
+                  <span>Mô tả</span>
+                  <textarea name="description" rows="5" placeholder="Mô tả chất liệu, màu sắc, công năng, vận chuyển..."></textarea>
+                </label>
+                <label>
+                  <span>URL nguồn/tham khảo</span>
+                  <input name="sourceUrl" type="url" placeholder="https://...">
+                </label>
+              </div>
+            </details>
 
             <div class="admin-preview" id="adminPreview" aria-label="Xem trước sản phẩm"></div>
 

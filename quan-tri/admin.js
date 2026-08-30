@@ -10,6 +10,7 @@ let products = originalProducts.map(cloneProduct);
 let changedIds = new Set();
 let selectedId = products[0]?.id || null;
 let cloudReady = false;
+let autoSeedAttempted = false;
 
 const list = document.querySelector("#adminProductList");
 const form = document.querySelector("#productEditorForm");
@@ -18,11 +19,12 @@ const category = document.querySelector("#adminCategory");
 const count = document.querySelector("#adminCount");
 const status = document.querySelector("#adminStatus");
 const preview = document.querySelector("#adminPreview");
+const imageFile = document.querySelector("#productImageFile");
+const productImagePreview = document.querySelector("#productImagePreview");
 const statTotal = document.querySelector("#statTotal");
 const statPriced = document.querySelector("#statPriced");
 const statImages = document.querySelector("#statImages");
 const statDraft = document.querySelector("#statDraft");
-const seedButton = document.querySelector("#seedButton");
 const reloadButton = document.querySelector("#reloadButton");
 
 function cloneProduct(product) {
@@ -53,6 +55,22 @@ function parsePrice(value) {
 
 function formatPrice(value) {
   return Number(value) > 0 ? money.format(Number(value)).replace("₫", "VNĐ") : "Liên hệ";
+}
+
+function imageSrc(image) {
+  const value = String(image || "assets/images/products/ban-giam-doc.jpg");
+  if (value.startsWith("http") || value.startsWith("/")) return value;
+  return `../${value}`;
+}
+
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/đ/g, "d")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "san-pham";
 }
 
 function compact(value, limit = 110) {
@@ -94,25 +112,26 @@ function setBusy(isBusy) {
   form?.querySelectorAll("button, input, select, textarea").forEach((control) => {
     control.disabled = isBusy;
   });
-  if (seedButton) seedButton.disabled = isBusy;
   if (reloadButton) reloadButton.disabled = isBusy;
 }
 
 function updateStats() {
-  statTotal.textContent = products.filter((item) => item.published !== false).length.toLocaleString("vi-VN");
-  statPriced.textContent = products.filter((item) => item.published !== false && Number(item.price) > 0).length.toLocaleString("vi-VN");
-  statImages.textContent = products.filter((item) => item.published !== false && item.image).length.toLocaleString("vi-VN");
+  const published = products.filter((item) => item.published !== false);
+  statTotal.textContent = published.length.toLocaleString("vi-VN");
+  statPriced.textContent = published.filter((item) => Number(item.price) > 0).length.toLocaleString("vi-VN");
+  statImages.textContent = published.filter((item) => item.image).length.toLocaleString("vi-VN");
   statDraft.textContent = changedIds.size.toLocaleString("vi-VN");
 }
 
 function renderList() {
   const items = filteredProducts();
-  if (count) count.textContent = `Hiển thị ${items.length.toLocaleString("vi-VN")} / ${products.filter((item) => item.published !== false).length.toLocaleString("vi-VN")} sản phẩm`;
+  const publishedCount = products.filter((item) => item.published !== false).length;
+  if (count) count.textContent = `Hiển thị ${items.length.toLocaleString("vi-VN")} / ${publishedCount.toLocaleString("vi-VN")} sản phẩm`;
   if (!list) return;
 
   list.innerHTML = items.map((product) => `
     <button class="admin-product-item${String(product.id) === String(selectedId) ? " active" : ""}" type="button" data-id="${escapeHtml(product.id)}">
-      <img src="../${escapeHtml(product.image || "assets/images/products/ban-giam-doc.jpg")}" alt="${escapeHtml(product.title || "Sản phẩm")}" loading="lazy">
+      <img src="${escapeHtml(imageSrc(product.image))}" alt="${escapeHtml(product.title || "Sản phẩm")}" loading="lazy">
       <span>
         <strong>${escapeHtml(product.title || "Sản phẩm chưa đặt tên")}</strong>
         <span>${escapeHtml(product.priceText || formatPrice(product.price))}</span>
@@ -140,13 +159,15 @@ function fillForm(product) {
   form.elements.warranty.value = product.warranty || "";
   form.elements.description.value = product.description || "";
   form.elements.sourceUrl.value = product.sourceUrl || "";
+  if (productImagePreview) productImagePreview.src = imageSrc(product.image);
   renderPreview(product);
 }
 
 function productFromForm(base = {}) {
   const price = parsePrice(form.elements.price.value);
   const title = form.elements.title.value.trim() || "Sản phẩm nội thất mới";
-  const code = form.elements.code.value.trim() || `NEW-${Date.now()}`;
+  const fallbackCode = base.code || `SP-${Date.now()}`;
+  const code = form.elements.code.value.trim() || fallbackCode;
   return {
     ...base,
     id: base.id || `new-${Date.now()}`,
@@ -164,6 +185,7 @@ function productFromForm(base = {}) {
     badge: form.elements.badge.value.trim() || "Chính hãng",
     sourceUrl: form.elements.sourceUrl.value.trim(),
     popularity: Number(base.popularity) || products.length + 1,
+    slug: base.slug || slugify([title, code].join("-")),
     published: true
   };
 }
@@ -172,7 +194,7 @@ function renderPreview(product) {
   if (!preview) return;
   preview.innerHTML = `
     <article>
-      <img src="../${escapeHtml(product.image || "assets/images/products/ban-giam-doc.jpg")}" alt="${escapeHtml(product.title || "Sản phẩm")}">
+      <img src="${escapeHtml(imageSrc(product.image))}" alt="${escapeHtml(product.title || "Sản phẩm")}">
       <div>
         <h3>${escapeHtml(product.title || "Sản phẩm chưa đặt tên")}</h3>
         <strong>${escapeHtml(product.priceText || formatPrice(product.price))}</strong>
@@ -203,13 +225,109 @@ async function fetchJson(url, options = {}) {
   return data;
 }
 
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+async function resizeImageFile(file) {
+  const dataUrl = await readFileAsDataUrl(file);
+  const image = await loadImage(dataUrl);
+  const maxSize = 1400;
+  const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+  const width = Math.max(1, Math.round(image.width * scale));
+  const height = Math.max(1, Math.round(image.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  context.drawImage(image, 0, 0, width, height);
+  return canvas.toDataURL("image/jpeg", 0.84);
+}
+
+async function uploadSelectedImage(file) {
+  if (!file) return;
+  if (!cloudReady) {
+    setStatus("Chưa kết nối Firebase nên chưa tải ảnh lên được.", "warn");
+    return;
+  }
+
+  setBusy(true);
+  setStatus("Đang tải ảnh lên...", "info");
+  try {
+    const dataUrl = await resizeImageFile(file);
+    const data = await fetchJson("../api/upload-image", {
+      method: "POST",
+      body: JSON.stringify({ fileName: file.name, contentType: "image/jpeg", data: dataUrl })
+    });
+    form.elements.image.value = data.image;
+    if (productImagePreview) productImagePreview.src = data.image;
+    renderPreview(productFromForm(selectedProduct() || {}));
+    setStatus("Đã tải ảnh lên. Nhập tên, giá rồi bấm Lưu lên web.", "success");
+  } catch (error) {
+    if (error.status === 401) {
+      window.location.href = "../dang-nhap/";
+      return;
+    }
+    const message = error.status === 503
+      ? "Chưa cấu hình Firebase Storage. Thêm FIREBASE_STORAGE_BUCKET trên Vercel rồi redeploy."
+      : "Chưa tải được ảnh. Thử ảnh nhỏ hơn hoặc kiểm tra cấu hình Storage.";
+    setStatus(message, "warn");
+  } finally {
+    setBusy(false);
+    imageFile.value = "";
+  }
+}
+
+async function autoSeedLegacyProducts() {
+  if (autoSeedAttempted) return;
+  autoSeedAttempted = true;
+  setBusy(true);
+  let offset = 0;
+  let total = originalProducts.length;
+  try {
+    while (offset !== null) {
+      setStatus(`Lần đầu đang tự đưa sản phẩm cũ lên Firebase: ${offset.toLocaleString("vi-VN")}/${total.toLocaleString("vi-VN")}...`, "info");
+      const data = await fetchJson("../api/products-seed", {
+        method: "POST",
+        body: JSON.stringify({ offset, limit: 250 })
+      });
+      total = Number(data.total || total);
+      offset = data.nextOffset;
+    }
+    setStatus(`Đã tự đưa ${total.toLocaleString("vi-VN")} sản phẩm cũ lên Firebase. Đang tải lại dữ liệu...`, "success");
+    await loadProductsFromCloud(true);
+  } catch (error) {
+    if (error.status === 401) {
+      window.location.href = "../dang-nhap/";
+      return;
+    }
+    setStatus("Chưa tự đưa sản phẩm cũ lên Firebase được. Kiểm tra biến Firebase trên Vercel rồi redeploy.", "warn");
+  } finally {
+    setBusy(false);
+  }
+}
+
 async function loadProductsFromCloud(showSuccess = false) {
   setStatus("Đang tải dữ liệu sản phẩm...", "info");
   try {
     const data = await fetchJson("../api/products");
+    cloudReady = true;
     if (Array.isArray(data.products) && data.products.length) {
       products = data.products.map(cloneProduct);
-      cloudReady = true;
       selectedId = products[0]?.id || null;
       changedIds = new Set();
       updateStats();
@@ -218,13 +336,13 @@ async function loadProductsFromCloud(showSuccess = false) {
       setStatus(showSuccess ? "Đã tải lại dữ liệu từ Firebase." : "Đã dùng dữ liệu live từ Firebase.", "success");
       return;
     }
-    cloudReady = true;
+
     products = originalProducts.map(cloneProduct);
     selectedId = products[0]?.id || null;
     updateStats();
     renderList();
     fillForm(selectedProduct());
-    setStatus("Firebase đang trống. Bấm 'Đưa sản phẩm cũ lên Firebase' một lần để bắt đầu.", "warn");
+    await autoSeedLegacyProducts();
   } catch (error) {
     cloudReady = false;
     products = originalProducts.map(cloneProduct);
@@ -233,7 +351,7 @@ async function loadProductsFromCloud(showSuccess = false) {
     renderList();
     fillForm(selectedProduct());
     const message = error.status === 503
-      ? "Chưa cấu hình Firebase trên Vercel. Sau khi thêm FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY rồi redeploy, nút Lưu lên web sẽ chạy."
+      ? "Chưa cấu hình Firebase trên Vercel. Thêm biến Firebase rồi redeploy, sản phẩm cũ sẽ tự đồng bộ."
       : "Chưa tải được Firebase, đang dùng dữ liệu dự phòng từ file cũ.";
     setStatus(message, "warn");
   }
@@ -241,6 +359,12 @@ async function loadProductsFromCloud(showSuccess = false) {
 
 async function saveCurrentProduct() {
   const existing = selectedProduct();
+  const titleInput = form.elements.title.value.trim();
+  const priceInput = parsePrice(form.elements.price.value);
+  if (!titleInput || !priceInput) {
+    setStatus("Nhập tối thiểu tên sản phẩm và giá bán trước khi lưu nhé.", "warn");
+    return;
+  }
   const updated = productFromForm(existing || {});
   if (!cloudReady) {
     setStatus("Chưa kết nối Firebase nên chưa lưu live được. Hãy cấu hình Firebase trên Vercel trước.", "warn");
@@ -276,10 +400,11 @@ async function saveCurrentProduct() {
 }
 
 function newProduct() {
+  const timestamp = Date.now();
   const product = {
-    id: `new-${Date.now()}`,
-    title: "Sản phẩm nội thất mới",
-    code: `NEW-${products.length + 1}`,
+    id: `new-${timestamp}`,
+    title: "",
+    code: `SP-${timestamp}`,
     price: 0,
     priceText: "Liên hệ",
     vatPrice: "",
@@ -298,7 +423,8 @@ function newProduct() {
   selectedId = product.id;
   renderList();
   fillForm(product);
-  setStatus("Đã tạo sản phẩm mới. Sửa thông tin rồi bấm Lưu lên web.", "success");
+  form.elements.title.focus();
+  setStatus("Thêm sản phẩm mới: chọn ảnh, nhập tên, nhập giá rồi bấm Lưu lên web.", "success");
 }
 
 function duplicateProduct() {
@@ -347,26 +473,6 @@ async function hideCurrentProduct() {
   }
 }
 
-async function seedLegacyProducts() {
-  const confirmed = window.confirm("Đưa toàn bộ 1.369 sản phẩm cũ lên Firebase? Việc này chỉ cần làm một lần.");
-  if (!confirmed) return;
-  setBusy(true);
-  setStatus("Đang đưa sản phẩm cũ lên Firebase, đợi một chút nhé...", "info");
-  try {
-    const data = await fetchJson("../api/products-seed", { method: "POST", body: "{}" });
-    setStatus(`Đã đưa ${Number(data.written || 0).toLocaleString("vi-VN")} sản phẩm cũ lên Firebase. Đang tải lại...`, "success");
-    await loadProductsFromCloud(true);
-  } catch (error) {
-    if (error.status === 401) {
-      window.location.href = "../dang-nhap/";
-      return;
-    }
-    setStatus("Chưa đẩy được sản phẩm lên Firebase. Kiểm tra FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY trên Vercel.", "warn");
-  } finally {
-    setBusy(false);
-  }
-}
-
 list?.addEventListener("click", (event) => {
   const button = event.target.closest(".admin-product-item");
   if (!button) return;
@@ -384,12 +490,12 @@ form?.addEventListener("submit", (event) => {
   saveCurrentProduct();
 });
 
+imageFile?.addEventListener("change", () => uploadSelectedImage(imageFile.files?.[0]));
 search?.addEventListener("input", renderList);
 category?.addEventListener("change", renderList);
 document.querySelector("#newProductButton")?.addEventListener("click", newProduct);
 document.querySelector("#duplicateButton")?.addEventListener("click", duplicateProduct);
 document.querySelector("#deleteButton")?.addEventListener("click", hideCurrentProduct);
-seedButton?.addEventListener("click", seedLegacyProducts);
 reloadButton?.addEventListener("click", () => loadProductsFromCloud(true));
 document.querySelector("#logoutButton")?.addEventListener("click", async () => {
   try {

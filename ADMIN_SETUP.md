@@ -21,15 +21,16 @@ Tạo session secret:
 -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 64 | ForEach-Object {[char]$_})
 ```
 
-## 2. Biến Firebase/Firestore trên Vercel
+## 2. Biến Firebase/Firestore/Storage trên Vercel
 
-Thêm tiếp 3 biến này để nút `Lưu lên web` và `Đưa sản phẩm cũ lên Firebase` hoạt động:
+Thêm tiếp 4 biến này để web tự đưa sản phẩm cũ lên Firebase, lưu sản phẩm mới và tải ảnh mẹ chọn từ máy:
 
 - `FIREBASE_PROJECT_ID`: ID project Firebase, ví dụ `duchuyfurniture`.
 - `FIREBASE_CLIENT_EMAIL`: email của service account, thường có dạng `firebase-adminsdk-...@...iam.gserviceaccount.com`.
 - `FIREBASE_PRIVATE_KEY`: private key trong file service account JSON, gồm cả dòng `-----BEGIN PRIVATE KEY-----` và `-----END PRIVATE KEY-----`.
+- `FIREBASE_STORAGE_BUCKET`: bucket Storage của Firebase, thường có dạng `ten-project.appspot.com` hoặc `ten-project.firebasestorage.app`.
 
-Cách lấy 3 giá trị này trong Firebase Console:
+Cách lấy các giá trị này trong Firebase Console:
 
 1. Vào Firebase project.
 2. Bấm bánh răng `Project settings`.
@@ -42,6 +43,7 @@ Cách lấy 3 giá trị này trong Firebase Console:
    - `project_id` vào `FIREBASE_PROJECT_ID`
    - `client_email` vào `FIREBASE_CLIENT_EMAIL`
    - `private_key` vào `FIREBASE_PRIVATE_KEY`
+9. Vào `Storage` trong Firebase Console, tạo bucket nếu chưa có, rồi copy tên bucket vào `FIREBASE_STORAGE_BUCKET`.
 
 Không commit file JSON service account vào GitHub.
 
@@ -71,5 +73,5 @@ Sau đó:
 1. Mở `/dang-nhap/`.
 2. Đăng nhập bằng tài khoản admin.
 3. Vào `/quan-tri/`.
-4. Nếu Firebase trống, bấm `Đưa sản phẩm cũ lên Firebase` một lần.
-5. Sau đó mẹ chỉ cần sửa sản phẩm và bấm `Lưu lên web`.
+4. Nếu Firestore đang trống, web sẽ tự đưa toàn bộ sản phẩm cũ lên Firebase theo từng mẻ. Chỉ cần để trang mở và chờ trạng thái báo xong.
+5. Sau đó mẹ chỉ cần bấm `Thêm sản phẩm`, chọn ảnh, nhập tên, nhập giá và bấm `Lưu lên web`.

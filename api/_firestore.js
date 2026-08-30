@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
-const FIRESTORE_SCOPE = "https://www.googleapis.com/auth/datastore";
+const GOOGLE_API_SCOPE = "https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/devstorage.read_write";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 let cachedToken = null;
 
@@ -40,7 +40,7 @@ async function getAccessToken() {
   const header = { alg: "RS256", typ: "JWT" };
   const claim = {
     iss: config.clientEmail,
-    scope: FIRESTORE_SCOPE,
+    scope: GOOGLE_API_SCOPE,
     aud: TOKEN_URL,
     exp: now + 3600,
     iat: now
@@ -273,5 +273,7 @@ module.exports = {
   listProducts,
   normalizeProduct,
   readStaticProducts,
+  getAccessToken,
+  slugify,
   upsertProduct
 };
