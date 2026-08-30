@@ -4,7 +4,7 @@ window.recoveredProducts = [
     "title": "Hòa phát ATH5115",
     "code": "ATH5115",
     "price": 7630000,
-    "priceText": "7.630.000 VNĐ",
+    "priceText": "7.630.000 VNĐ",
     "vatPrice": "8.393.000 VNĐ (Đã bao gồm VAT)",
     "size": "W5100x D1500 x H750 mm",
     "warranty": "Sản phẩm bảo hành 12 tháng",

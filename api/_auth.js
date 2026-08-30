@@ -13,14 +13,14 @@ function sign(payload, secret) {
 
 function getConfig() {
   return {
-    username: process.env.ADMIN_USERNAME || "admin",
+    username: process.env.ADMIN_USERNAME || "",
     passwordHash: process.env.ADMIN_PASSWORD_SHA256 || "",
     secret: process.env.ADMIN_SESSION_SECRET || ""
   };
 }
 
 function missingConfig(config = getConfig()) {
-  return !config.passwordHash || !config.secret;
+  return !config.username || !config.passwordHash || !config.secret;
 }
 
 function sha256(value) {
@@ -34,18 +34,26 @@ function timingSafeEqual(a, b) {
   return crypto.timingSafeEqual(left, right);
 }
 
+function shouldUseSecureCookie(req = {}) {
+  const proto = String(req.headers?.["x-forwarded-proto"] || "").split(",")[0].trim();
+  const host = String(req.headers?.host || "");
+  return proto === "https" || host.endsWith(".vercel.app") || process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
+}
+
+function cookieSecurityAttributes(req = {}) {
+  return `HttpOnly; SameSite=Lax${shouldUseSecureCookie(req) ? "; Secure" : ""}`;
+}
+
 function createSessionCookie(username, req) {
   const config = getConfig();
   const now = Math.floor(Date.now() / 1000);
   const payload = base64url(JSON.stringify({ sub: username, iat: now, exp: now + SESSION_TTL_SECONDS }));
   const token = `${payload}.${sign(payload, config.secret)}`;
-  const proto = req.headers["x-forwarded-proto"] || "http";
-  const secure = proto === "https" ? "; Secure" : "";
-  return `${COOKIE_NAME}=${token}; Max-Age=${SESSION_TTL_SECONDS}; Path=/; HttpOnly; SameSite=Lax${secure}`;
+  return `${COOKIE_NAME}=${token}; Max-Age=${SESSION_TTL_SECONDS}; Path=/; ${cookieSecurityAttributes(req)}`;
 }
 
-function clearSessionCookie() {
-  return `${COOKIE_NAME}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax`;
+function clearSessionCookie(req) {
+  return `${COOKIE_NAME}=; Max-Age=0; Path=/; ${cookieSecurityAttributes(req)}`;
 }
 
 function parseCookies(req) {
@@ -66,10 +74,30 @@ function verifySession(req) {
   try {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
     if (!data.exp || data.exp < Math.floor(Date.now() / 1000)) return null;
+    if (data.sub !== config.username) return null;
     return data;
   } catch {
     return null;
   }
+}
+
+function sameOriginRequest(req = {}) {
+  const origin = req.headers?.origin;
+  if (!origin) return true;
+  try {
+    const originUrl = new URL(origin);
+    const host = String(req.headers?.["x-forwarded-host"] || req.headers?.host || "").split(",")[0].trim();
+    return Boolean(host && originUrl.host === host);
+  } catch {
+    return false;
+  }
+}
+
+function assertSameOrigin(req) {
+  if (sameOriginRequest(req)) return;
+  const error = new Error("bad_origin");
+  error.statusCode = 403;
+  throw error;
 }
 
 async function readJson(req) {
@@ -83,6 +111,7 @@ async function readJson(req) {
 }
 
 module.exports = {
+  assertSameOrigin,
   clearSessionCookie,
   createSessionCookie,
   getConfig,

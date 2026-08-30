@@ -1,9 +1,9 @@
-const { readJson, verifySession } = require("./_auth");
+const { readJson, verifySession, assertSameOrigin } = require("./_auth");
 const { hideProduct, listProducts, upsertProduct } = require("./_catalog");
 
 function sendError(res, error) {
   const status = error.statusCode || 500;
-  return res.status(status).json({ error: error.message || "server_error", details: error.details || undefined });
+  return res.status(status).json({ error: error.message || "server_error" });
 }
 
 module.exports = async function handler(req, res) {
@@ -13,6 +13,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, source: "static", products });
     }
 
+    assertSameOrigin(req);
     const session = verifySession(req);
     if (!session) return res.status(401).json({ error: "not_authenticated" });
 

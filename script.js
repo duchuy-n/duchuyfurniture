@@ -198,11 +198,20 @@ function buildCatalogMenu() {
   catalogMenu.querySelector("button")?.classList.add("active");
 }
 
+function comparePriceWithContactLast(a, b, direction = "asc") {
+  const priceA = Number(a.price) || 0;
+  const priceB = Number(b.price) || 0;
+  const hasPriceA = priceA > 0;
+  const hasPriceB = priceB > 0;
+  if (hasPriceA !== hasPriceB) return hasPriceA ? -1 : 1;
+  return direction === "asc" ? priceA - priceB : priceB - priceA;
+}
+
 function sortedProducts(products) {
   const value = sort?.value || "featured";
   return [...products].sort((a, b) => {
-    if (value === "price-asc") return Number(a.price) - Number(b.price);
-    if (value === "price-desc") return Number(b.price) - Number(a.price);
+    if (value === "price-asc") return comparePriceWithContactLast(a, b, "asc");
+    if (value === "price-desc") return comparePriceWithContactLast(a, b, "desc");
     if (value === "name") return (a.title || "").localeCompare(b.title || "", "vi");
     return Number(b.popularity) - Number(a.popularity);
   });
@@ -259,9 +268,11 @@ const modalPrice = document.querySelector("#modalPrice");
 const modalDesc = document.querySelector("#modalDesc");
 const modalCode = document.querySelector("#modalCode");
 const modalSpec = document.querySelector("#modalSpec");
+let lastModalTrigger = null;
 
-function openProductModal(card) {
+function openProductModal(card, trigger = null) {
   if (!modal) return;
+  lastModalTrigger = trigger || card;
   const image = card.querySelector("img");
   modalImage.src = image?.getAttribute("src") || "";
   modalImage.alt = image?.alt || card.dataset.title || "Sản phẩm";
@@ -276,27 +287,45 @@ function openProductModal(card) {
   modal.classList.add("open");
   modal.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
+  modal.querySelector(".modal-close")?.focus();
 }
 
 function closeProductModal() {
+  const wasOpen = modal?.classList.contains("open");
   modal?.classList.remove("open");
   modal?.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
+  if (wasOpen && lastModalTrigger instanceof HTMLElement) lastModalTrigger.focus();
 }
 
 productGrid?.addEventListener("click", (event) => {
   const quickView = event.target.closest("[data-quick-view]");
   if (!quickView) return;
   const card = event.target.closest(".product-card");
-  if (card) openProductModal(card);
+  if (card) openProductModal(card, quickView);
 });
 
 productGrid?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
   if (event.target.closest("a, button, input, select")) return;
   const card = event.target.closest(".product-card");
-  if (card) openProductModal(card);
+  if (card) openProductModal(card, card);
 });
+
+function trapModalFocus(event) {
+  if (event.key !== "Tab" || !modal?.classList.contains("open")) return;
+  const focusable = Array.from(modal.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
 
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -328,6 +357,7 @@ document.querySelectorAll("[data-close-modal]").forEach((control) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Tab") trapModalFocus(event);
   if (event.key !== "Escape") return;
   closeProductModal();
   closeNavMenu();

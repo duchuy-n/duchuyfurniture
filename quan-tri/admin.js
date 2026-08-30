@@ -9,6 +9,8 @@ let products = originalProducts.map(cloneProduct);
 let changedIds = new Set();
 let selectedId = products[0]?.id || null;
 let cloudReady = false;
+let formDirty = false;
+let suppressDirty = false;
 
 const list = document.querySelector("#adminProductList");
 const form = document.querySelector("#productEditorForm");
@@ -150,6 +152,7 @@ function selectedProduct() {
 
 function fillForm(product) {
   if (!form || !product) return;
+  suppressDirty = true;
   form.elements.title.value = product.title || "";
   form.elements.code.value = product.code || "";
   form.elements.price.value = product.price ? String(product.price) : "";
@@ -164,6 +167,8 @@ function fillForm(product) {
   form.elements.sourceUrl.value = product.sourceUrl || "";
   if (productImagePreview) productImagePreview.src = imageSrc(product.image);
   renderPreview(product);
+  formDirty = false;
+  suppressDirty = false;
 }
 
 function productFromForm(base = {}) {
@@ -280,7 +285,7 @@ async function uploadSelectedImage(file) {
     form.elements.image.value = data.image;
     if (productImagePreview) productImagePreview.src = data.image;
     renderPreview(productFromForm(selectedProduct() || {}));
-    setStatus("Đã tải ảnh lên. Nhập tên, giá rồi bấm Lưu lên web.", "success");
+    setStatus("Đã tải ảnh lên. Nhập tên, giá nếu có rồi bấm Lưu lên web.", "success");
   } catch (error) {
     if (error.status === 401) {
       window.location.href = "../dang-nhap/";
@@ -301,14 +306,14 @@ async function loadProductsFromCloud(showSuccess = false) {
   setStatus("Đang tải danh sách sản phẩm...", "info");
   try {
     const data = await fetchJson("../api/products");
-    cloudReady = true;
     products = Array.isArray(data.products) && data.products.length ? data.products.map(cloneProduct) : originalProducts.map(cloneProduct);
     selectedId = products[0]?.id || null;
     changedIds = new Set();
     updateStats();
     renderList();
     fillForm(selectedProduct());
-    setStatus(showSuccess ? "Đã tải lại danh sách sản phẩm." : "Đã tải đủ sản phẩm. Khi lưu, GitHub sẽ cập nhật và Vercel tự deploy bản mới.", "success");
+    const canSave = await checkSaveBackendReady();
+    setStatus(canSave ? (showSuccess ? "Đã tải lại danh sách sản phẩm. Có thể lưu lên GitHub." : "Đã tải đủ sản phẩm. Khi lưu, GitHub sẽ cập nhật và Vercel tự deploy bản mới.") : "Đã tải danh sách sản phẩm, nhưng chưa kiểm tra được quyền lưu GitHub. Kiểm tra GITHUB_TOKEN trên Vercel nếu bấm Lưu bị lỗi.", canSave ? "success" : "warn");
   } catch (error) {
     cloudReady = false;
     products = originalProducts.map(cloneProduct);
@@ -320,6 +325,22 @@ async function loadProductsFromCloud(showSuccess = false) {
   }
 }
 
+
+function canDiscardDraft() {
+  if (!formDirty) return true;
+  return window.confirm("Bạn đang sửa sản phẩm nhưng chưa lưu. Bỏ thay đổi hiện tại để chuyển tiếp?");
+}
+
+async function checkSaveBackendReady() {
+  try {
+    const status = await fetchJson("../api/github-status");
+    cloudReady = Boolean(status.ok && status.canReadProductsFile);
+    return cloudReady;
+  } catch {
+    cloudReady = false;
+    return false;
+  }
+}
 function githubSaveErrorMessage(error) {
   const code = error?.message || "";
   if (code === "github_not_configured") {
@@ -342,9 +363,8 @@ function githubSaveErrorMessage(error) {
 async function saveCurrentProduct() {
   const existing = selectedProduct();
   const titleInput = form.elements.title.value.trim();
-  const priceInput = parsePrice(form.elements.price.value);
-  if (!titleInput || !priceInput) {
-    setStatus("Nhập tối thiểu tên sản phẩm và giá bán trước khi lưu nhé.", "warn");
+  if (!titleInput) {
+    setStatus("Nhập tối thiểu tên sản phẩm trước khi lưu nhé. Nếu chưa có giá, có thể để trống để hiện Liên hệ.", "warn");
     return;
   }
   const updated = productFromForm(existing || {});
@@ -382,6 +402,7 @@ async function saveCurrentProduct() {
 }
 
 function newProduct() {
+  if (!canDiscardDraft()) return;
   const timestamp = Date.now();
   const product = {
     id: `new-${timestamp}`,
@@ -406,10 +427,12 @@ function newProduct() {
   renderList();
   fillForm(product);
   form.elements.title.focus();
-  setStatus("Thêm sản phẩm mới: chọn ảnh, nhập tên, nhập giá rồi bấm Lưu lên web.", "success");
+  formDirty = true;
+  setStatus("Thêm sản phẩm mới: chọn ảnh, nhập tên, nhập giá nếu có rồi bấm Lưu lên web.", "success");
 }
 
 function duplicateProduct() {
+  if (!canDiscardDraft()) return;
   const current = selectedProduct();
   if (!current) return;
   const copy = cloneProduct(current);
@@ -420,6 +443,7 @@ function duplicateProduct() {
   selectedId = copy.id;
   renderList();
   fillForm(copy);
+  formDirty = true;
   setStatus("Đã nhân bản sản phẩm. Sửa thông tin rồi bấm Lưu lên web.", "success");
 }
 
@@ -458,12 +482,15 @@ async function hideCurrentProduct() {
 list?.addEventListener("click", (event) => {
   const button = event.target.closest(".admin-product-item");
   if (!button) return;
+  if (String(button.dataset.id) === String(selectedId)) return;
+  if (!canDiscardDraft()) return;
   selectedId = button.dataset.id;
   renderList();
   fillForm(selectedProduct());
 });
 
 form?.addEventListener("input", () => {
+  if (!suppressDirty) formDirty = true;
   renderPreview(productFromForm(selectedProduct() || {}));
 });
 
@@ -478,8 +505,12 @@ category?.addEventListener("change", renderList);
 document.querySelector("#newProductButton")?.addEventListener("click", newProduct);
 document.querySelector("#duplicateButton")?.addEventListener("click", duplicateProduct);
 document.querySelector("#deleteButton")?.addEventListener("click", hideCurrentProduct);
-reloadButton?.addEventListener("click", () => loadProductsFromCloud(true));
+reloadButton?.addEventListener("click", () => {
+  if (!canDiscardDraft()) return;
+  loadProductsFromCloud(true);
+});
 document.querySelector("#logoutButton")?.addEventListener("click", async () => {
+  if (!canDiscardDraft()) return;
   try {
     await fetch("../api/logout", { method: "POST", credentials: "include" });
   } finally {

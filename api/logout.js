@@ -1,4 +1,4 @@
-const { clearSessionCookie } = require("./_auth");
+const { assertSameOrigin, clearSessionCookie } = require("./_auth");
 
 module.exports = function handler(req, res) {
   if (req.method !== "POST") {
@@ -6,6 +6,12 @@ module.exports = function handler(req, res) {
     return res.status(405).json({ error: "method_not_allowed" });
   }
 
-  res.setHeader("Set-Cookie", clearSessionCookie());
+  try {
+    assertSameOrigin(req);
+  } catch (error) {
+    return res.status(error.statusCode || 403).json({ error: error.message });
+  }
+
+  res.setHeader("Set-Cookie", clearSessionCookie(req));
   return res.status(200).json({ ok: true });
 };

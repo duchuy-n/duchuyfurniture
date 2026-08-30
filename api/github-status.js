@@ -16,8 +16,7 @@ module.exports = async function handler(req, res) {
   } catch (error) {
     return res.status(error.statusCode || 500).json({
       ok: false,
-      error: error.message || "server_error",
-      details: error.details || undefined
+      error: error.message || "server_error"
     });
   }
 };

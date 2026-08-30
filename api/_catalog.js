@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const PRODUCTS_FILE = "products.js";
+const SITEMAP_FILE = "sitemap.xml";
 const DEFAULT_IMAGE = "assets/images/products/ban-giam-doc.jpg";
 const SITE_URL = (process.env.SITE_URL || "https://duchuyfurniture.vercel.app").replace(/\/+$/, "");
 
@@ -264,6 +265,49 @@ function detailFileForProduct(product, products) {
   };
 }
 
+function sitemapUrlBlock(url, { lastmod = new Date().toISOString().slice(0, 10), changefreq = "weekly", priority = "0.7" } = {}) {
+  return `  <url>
+    <loc>${escapeHtml(url)}</loc>
+    <lastmod>${escapeHtml(lastmod)}</lastmod>
+    <changefreq>${escapeHtml(changefreq)}</changefreq>
+    <priority>${escapeHtml(priority)}</priority>
+  </url>`;
+}
+
+function readStaticSitemapBlocks() {
+  const sitemapPath = path.join(process.cwd(), SITEMAP_FILE);
+  if (!fs.existsSync(sitemapPath)) {
+    return [sitemapUrlBlock(`${SITE_URL}/`, { changefreq: "daily", priority: "1.0" })];
+  }
+  const current = fs.readFileSync(sitemapPath, "utf8");
+  return Array.from(current.matchAll(/<url>[\s\S]*?<\/url>/g))
+    .map((match) => match[0])
+    .filter((block) => !block.includes(`${SITE_URL}/san-pham/`));
+}
+
+function renderSitemapXml(products) {
+  const staticBlocks = readStaticSitemapBlocks();
+  const productBlocks = sortProducts(products)
+    .filter((product) => product.published !== false)
+    .map((product) => sitemapUrlBlock(siteUrlFor(detailPathForProduct(product)), {
+      lastmod: String(product.updatedAt || product.createdAt || new Date().toISOString()).slice(0, 10),
+      changefreq: "weekly",
+      priority: "0.8"
+    }));
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${[...staticBlocks, ...productBlocks].join("\n")}
+</urlset>
+`;
+}
+
+function sitemapFileForProducts(products) {
+  return {
+    path: SITEMAP_FILE,
+    content: renderSitemapXml(products)
+  };
+}
+
 function githubConfig() {
   return {
     token: process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "",
@@ -378,6 +422,16 @@ async function commitFilesToGithub(files, message) {
   const treeEntries = [];
 
   for (const file of files) {
+    if (file.delete) {
+      treeEntries.push({
+        path: cleanRelativePath(file.path),
+        mode: "100644",
+        type: "blob",
+        sha: null
+      });
+      continue;
+    }
+
     const blob = await githubRequest(`${base}/git/blobs`, {
       method: "POST",
       body: JSON.stringify({ content: file.content, encoding: "utf-8" })
@@ -443,7 +497,7 @@ async function upsertProduct(product) {
     savedProduct = normalized;
     return {
       products: next,
-      extraFiles: [detailFileForProduct(normalized, next)]
+      extraFiles: [detailFileForProduct(normalized, next), sitemapFileForProducts(next)]
     };
   }, `Update product: ${title}`);
   return result.products.find((item) => String(item.id) === String(savedProduct?.id)) || savedProduct || normalizeProduct(product);
@@ -462,7 +516,13 @@ async function hideProduct(id) {
       error.statusCode = 404;
       throw error;
     }
-    return next;
+    return {
+      products: next,
+      extraFiles: [
+        { path: `${detailPathForProduct(hiddenProduct)}index.html`, delete: true },
+        sitemapFileForProducts(next)
+      ]
+    };
   }, `Hide product: ${id}`);
   return hiddenProduct;
 }
@@ -504,6 +564,7 @@ async function checkGithubStatus() {
 module.exports = {
   checkGithubStatus,
   detailFileForProduct,
+  renderSitemapXml,
   detailPathForProduct,
   formatPrice,
   formatVatPrice,
