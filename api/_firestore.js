@@ -19,7 +19,33 @@ function firestoreConfigured(config = firestoreConfig()) {
 }
 
 function normalizePrivateKey(value) {
-  return String(value || "").replace(/\\n/g, "\n");
+  let key = String(value || "").trim();
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1);
+  }
+  key = key.replace(/\\n/g, "\n").replace(/\r\n/g, "\n");
+
+  const begin = "-----BEGIN PRIVATE KEY-----";
+  const end = "-----END PRIVATE KEY-----";
+  if (key.includes(begin) && key.includes(end) && !key.includes("\n")) {
+    const start = key.indexOf(begin) + begin.length;
+    const finish = key.indexOf(end);
+    const body = key.slice(start, finish).replace(/\s+/g, "");
+    const lines = body.match(/.{1,64}/g) || [];
+    key = `${begin}\n${lines.join("\n")}\n${end}\n`;
+  }
+
+  return key;
+}
+
+function assertValidPrivateKey(privateKey) {
+  try {
+    crypto.createPrivateKey(privateKey);
+  } catch {
+    const error = new Error("firebase_private_key_invalid");
+    error.statusCode = 503;
+    throw error;
+  }
 }
 
 function base64url(input) {
@@ -34,6 +60,8 @@ async function getAccessToken() {
     throw error;
   }
 
+  assertValidPrivateKey(config.privateKey);
+
   const now = Math.floor(Date.now() / 1000);
   if (cachedToken && cachedToken.expiresAt - 60 > now) return cachedToken.accessToken;
 
@@ -46,7 +74,14 @@ async function getAccessToken() {
     iat: now
   };
   const unsigned = `${base64url(JSON.stringify(header))}.${base64url(JSON.stringify(claim))}`;
-  const signature = crypto.createSign("RSA-SHA256").update(unsigned).sign(config.privateKey, "base64url");
+  let signature;
+  try {
+    signature = crypto.createSign("RSA-SHA256").update(unsigned).sign(config.privateKey, "base64url");
+  } catch {
+    const error = new Error("firebase_private_key_invalid");
+    error.statusCode = 503;
+    throw error;
+  }
   const assertion = `${unsigned}.${signature}`;
 
   const response = await fetch(TOKEN_URL, {

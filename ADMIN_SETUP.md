@@ -45,6 +45,8 @@ Cách lấy trong Firebase Console:
    - `client_email` vào `FIREBASE_CLIENT_EMAIL`
    - `private_key` vào `FIREBASE_PRIVATE_KEY`
 
+Với `FIREBASE_PRIVATE_KEY`, chỉ copy giá trị của dòng `private_key`, không copy cả file JSON và không copy dấu `"` ngoài cùng. Giữ nguyên các đoạn `\n` trong value.
+
 Không commit file JSON service account vào GitHub.
 
 ## 3. Biến ImageKit trên Vercel
