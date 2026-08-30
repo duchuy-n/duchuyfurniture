@@ -1,5 +1,5 @@
 const { verifySession } = require("./_auth");
-const { hideProduct, listProducts, upsertProduct } = require("./_firestore");
+const { hideProduct, listProducts, readStaticProducts, upsertProduct } = require("./_firestore");
 
 function sendError(res, error) {
   const status = error.statusCode || 500;
@@ -9,8 +9,15 @@ function sendError(res, error) {
 module.exports = async function handler(req, res) {
   try {
     if (req.method === "GET") {
-      const products = await listProducts();
-      return res.status(200).json({ ok: true, products });
+      try {
+        const products = await listProducts();
+        return res.status(200).json({ ok: true, products });
+      } catch (error) {
+        if (error.statusCode === 429 || error.message === "firestore_rate_limited") {
+          return res.status(200).json({ ok: true, fallback: true, reason: "firestore_rate_limited", products: readStaticProducts() });
+        }
+        throw error;
+      }
     }
 
     const session = verifySession(req);

@@ -365,13 +365,13 @@ async function autoSeedLegacyProducts(startOffset = Number(localStorage.getItem(
       setStatus(`Lần đầu đang tự đưa sản phẩm cũ lên Firebase: ${offset.toLocaleString("vi-VN")}/${total.toLocaleString("vi-VN")}...`, "info");
       const data = await fetchJson("../api/products-seed", {
         method: "POST",
-        body: JSON.stringify({ offset, limit: 60 })
+        body: JSON.stringify({ offset, limit: 20 })
       });
       total = Number(data.total || total);
       offset = data.nextOffset;
       if (offset !== null) localStorage.setItem(SEED_OFFSET_KEY, String(offset));
       else localStorage.removeItem(SEED_OFFSET_KEY);
-      if (offset !== null) await wait(1200);
+      if (offset !== null) await wait(1800);
     }
     setStatus(`Đã tự đưa ${total.toLocaleString("vi-VN")} sản phẩm cũ lên Firebase. Đang tải lại dữ liệu...`, "success");
     await loadProductsFromCloud(true);
@@ -380,7 +380,8 @@ async function autoSeedLegacyProducts(startOffset = Number(localStorage.getItem(
       window.location.href = "../dang-nhap/";
       return;
     }
-    const message = error.status === 429 ? "Firebase đang giới hạn tạm thời. Đợi 1-2 phút rồi bấm Làm mới để tiếp tục đồng bộ." : "Chưa tự đưa sản phẩm cũ lên Firebase được. Kiểm tra biến Firebase trên Vercel rồi redeploy.";
+    if (error.status === 429) autoSeedAttempted = false;
+    const message = error.status === 429 ? "Firebase đang giới hạn ghi tạm thời. Web đã lưu mốc đồng bộ, đợi một lát rồi bấm Làm mới để chạy tiếp." : "Chưa tự đưa sản phẩm cũ lên Firebase được. Kiểm tra biến Firebase trên Vercel rồi redeploy.";
     setStatus(message, "warn");
   } finally {
     setBusy(false);
@@ -392,7 +393,7 @@ async function loadProductsFromCloud(showSuccess = false) {
   try {
     const data = await fetchJson("../api/products");
     cloudReady = true;
-    if (Array.isArray(data.products) && data.products.length) {
+    if (Array.isArray(data.products) && data.products.length && !data.fallback) {
       products = data.products.map(cloneProduct);
       selectedId = products[0]?.id || null;
       changedIds = new Set();
@@ -411,11 +412,12 @@ async function loadProductsFromCloud(showSuccess = false) {
       return;
     }
 
-    products = originalProducts.map(cloneProduct);
+    products = Array.isArray(data.products) && data.products.length ? data.products.map(cloneProduct) : originalProducts.map(cloneProduct);
     selectedId = products[0]?.id || null;
     updateStats();
     renderList();
     fillForm(selectedProduct());
+    if (data.fallback) setStatus("Firebase đang giới hạn đọc, đang dùng dữ liệu dự phòng để đồng bộ tiếp chậm hơn.", "warn");
     await autoSeedLegacyProducts();
   } catch (error) {
     cloudReady = false;
@@ -427,6 +429,7 @@ async function loadProductsFromCloud(showSuccess = false) {
     if (error.status === 429) {
       cloudReady = true;
       setStatus("Firebase đang giới hạn đọc tạm thời. Web sẽ thử đồng bộ tiếp chậm hơn bằng dữ liệu dự phòng.", "warn");
+      autoSeedAttempted = false;
       await wait(2500);
       await autoSeedLegacyProducts();
       return;
