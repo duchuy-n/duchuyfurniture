@@ -417,7 +417,7 @@ async function loadProductsFromCloud(showSuccess = false) {
     updateStats();
     renderList();
     fillForm(selectedProduct());
-    if (data.fallback) setStatus("Firebase đang giới hạn đọc, đang dùng dữ liệu dự phòng để đồng bộ tiếp chậm hơn.", "warn");
+    if (data.fallback) setStatus("Đã tải đủ dữ liệu dự phòng. Firebase đang giới hạn đọc nên web sẽ tự đồng bộ tiếp chậm hơn.", "warn");
     await autoSeedLegacyProducts();
   } catch (error) {
     cloudReady = false;
@@ -428,7 +428,7 @@ async function loadProductsFromCloud(showSuccess = false) {
     fillForm(selectedProduct());
     if (error.status === 429) {
       cloudReady = true;
-      setStatus("Firebase đang giới hạn đọc tạm thời. Web sẽ thử đồng bộ tiếp chậm hơn bằng dữ liệu dự phòng.", "warn");
+      setStatus("Đã tải đủ dữ liệu dự phòng. Firebase đang giới hạn đọc tạm thời nên web sẽ tự đồng bộ tiếp chậm hơn.", "warn");
       autoSeedAttempted = false;
       await wait(2500);
       await autoSeedLegacyProducts();
