@@ -52,7 +52,12 @@ function parsePrice(value) {
 }
 
 function formatPrice(value) {
-  return Number(value) > 0 ? money.format(Number(value)).replace("₫", "VNĐ") : "Liên hệ";
+  return Number(value) > 0 ? money.format(Number(value)).replace("₫", "VNĐ").replace(/\s+/g, " ") : "Liên hệ";
+}
+
+function formatVatPrice(value) {
+  const price = Number(value) || 0;
+  return price > 0 ? `${Math.round(price * 1.1).toLocaleString("vi-VN")} VNĐ (Đã bao gồm VAT)` : "";
 }
 
 function imageSrc(image) {
@@ -173,7 +178,7 @@ function productFromForm(base = {}) {
     code,
     price,
     priceText: formatPrice(price),
-    vatPrice: form.elements.vatPrice.value.trim(),
+    vatPrice: formatVatPrice(price),
     size: form.elements.size.value.trim() || "Liên hệ tư vấn kích thước",
     warranty: form.elements.warranty.value.trim() || "Sản phẩm bảo hành 12 tháng",
     description: form.elements.description.value.trim() || "Liên hệ Nội thất Đức Huy để được tư vấn chi tiết.",
