@@ -1,23 +1,5 @@
 const { verifySession } = require("./_auth");
-const { slugify } = require("./_firestore");
-
-const IMAGEKIT_UPLOAD_URL = "https://upload.imagekit.io/api/v1/files/upload";
-
-function normalizeFolder(value) {
-  const folder = String(value || "/duchuy-products").trim() || "/duchuy-products";
-  return folder.startsWith("/") ? folder : `/${folder}`;
-}
-
-function imageKitConfig() {
-  return {
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
-    folder: normalizeFolder(process.env.IMAGEKIT_FOLDER)
-  };
-}
-
-function imageKitConfigured(config = imageKitConfig()) {
-  return Boolean(config.privateKey);
-}
+const { safeImageFileName, uploadBase64Image } = require("./_imagekit");
 
 function parseBody(req) {
   if (req.body && typeof req.body === "object") return Promise.resolve(req.body);
@@ -55,45 +37,10 @@ function parseImage(body) {
     throw error;
   }
 
-  const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
-  const safeName = slugify(fileName.replace(/\.[^.]+$/, ""));
   return {
     base64,
-    contentType,
-    fileName: `${Date.now()}-${safeName}.${ext}`
+    fileName: safeImageFileName(fileName)
   };
-}
-
-async function uploadToImageKit(image, config) {
-  const form = new FormData();
-  form.append("file", image.base64);
-  form.append("fileName", image.fileName);
-  form.append("folder", config.folder);
-  form.append("useUniqueFileName", "true");
-  form.append("tags", "duchuy,product");
-
-  const response = await fetch(IMAGEKIT_UPLOAD_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${config.privateKey}:`).toString("base64")}`
-    },
-    body: form
-  });
-
-  let data = null;
-  try {
-    data = await response.json();
-  } catch {
-    data = null;
-  }
-
-  if (!response.ok) {
-    const error = new Error(data?.message || "imagekit_upload_failed");
-    error.statusCode = response.status;
-    throw error;
-  }
-
-  return data;
 }
 
 module.exports = async function handler(req, res) {
@@ -105,29 +52,18 @@ module.exports = async function handler(req, res) {
   const session = verifySession(req);
   if (!session) return res.status(401).json({ error: "not_authenticated" });
 
-  const config = imageKitConfig();
-  if (!imageKitConfigured(config)) return res.status(503).json({ error: "imagekit_not_configured" });
-
   try {
     const body = await parseBody(req);
     const image = parseImage(body);
-    const uploaded = await uploadToImageKit(image, config);
-    const imageUrl = uploaded.url || uploaded.thumbnailUrl;
-
-    if (!imageUrl) {
-      const error = new Error("imagekit_missing_url");
-      error.statusCode = 502;
-      throw error;
-    }
+    const uploaded = await uploadBase64Image(image);
 
     return res.status(200).json({
       ok: true,
       fileId: uploaded.fileId,
       filePath: uploaded.filePath,
-      image: imageUrl
+      image: uploaded.url || uploaded.thumbnailUrl
     });
   } catch (error) {
-    const message = error.statusCode === 503 ? error.message : (error.message || "upload_failed");
-    return res.status(error.statusCode || 500).json({ error: message });
+    return res.status(error.statusCode || 500).json({ error: error.message || "upload_failed" });
   }
 };

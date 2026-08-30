@@ -11,6 +11,7 @@ let changedIds = new Set();
 let selectedId = products[0]?.id || null;
 let cloudReady = false;
 let autoSeedAttempted = false;
+let autoImageMigrationAttempted = false;
 
 const list = document.querySelector("#adminProductList");
 const form = document.querySelector("#productEditorForm");
@@ -292,6 +293,62 @@ async function uploadSelectedImage(file) {
   }
 }
 
+
+function isLegacyLocalImage(image) {
+  const value = String(image || "").trim();
+  if (!value) return false;
+  if (value.startsWith("http") || value.startsWith("//") || value.startsWith("data:")) return false;
+  const clean = value.replace(/^\.\//, "").replace(/^\.\.\//, "");
+  return clean.startsWith("assets/") || clean.startsWith("crawl-output/");
+}
+
+function legacyImageCount() {
+  return products.filter((product) => product.published !== false && isLegacyLocalImage(product.image)).length;
+}
+
+async function autoMigrateLegacyImages() {
+  const startingCount = legacyImageCount();
+  if (!startingCount || autoImageMigrationAttempted) return false;
+  autoImageMigrationAttempted = true;
+  setBusy(true);
+
+  try {
+    let remaining = startingCount;
+    let migratedTotal = 0;
+    while (remaining > 0) {
+      setStatus(`Đang đưa ảnh cũ lên ImageKit: còn khoảng ${remaining.toLocaleString("vi-VN")} ảnh...`, "info");
+      const data = await fetchJson("../api/products-migrate-images", {
+        method: "POST",
+        body: JSON.stringify({ limit: 30 })
+      });
+      migratedTotal += Number(data.migrated || 0);
+      remaining = Number(data.remaining || 0);
+
+      if (Array.isArray(data.failed) && data.failed.length && Number(data.migrated || 0) === 0) {
+        setStatus("Một số ảnh cũ chưa đưa lên ImageKit được. Web vẫn dùng ảnh local, bạn có thể thử Làm mới sau.", "warn");
+        return false;
+      }
+
+      if (data.done) break;
+    }
+
+    setStatus(`Đã đưa ${migratedTotal.toLocaleString("vi-VN")} ảnh cũ lên ImageKit. Đang tải lại dữ liệu...`, "success");
+    await loadProductsFromCloud(true);
+    return true;
+  } catch (error) {
+    if (error.status === 401) {
+      window.location.href = "../dang-nhap/";
+      return true;
+    }
+    const message = error.status === 503
+      ? "Chưa cấu hình ImageKit. Thêm IMAGEKIT_PRIVATE_KEY trên Vercel rồi redeploy."
+      : "Chưa đưa ảnh cũ lên ImageKit được. Web vẫn dùng ảnh local, có thể thử lại sau.";
+    setStatus(message, "warn");
+    return false;
+  } finally {
+    setBusy(false);
+  }
+}
 async function autoSeedLegacyProducts() {
   if (autoSeedAttempted) return;
   autoSeedAttempted = true;
@@ -333,6 +390,10 @@ async function loadProductsFromCloud(showSuccess = false) {
       updateStats();
       renderList();
       fillForm(selectedProduct());
+      if (legacyImageCount() && !autoImageMigrationAttempted) {
+        await autoMigrateLegacyImages();
+        return;
+      }
       setStatus(showSuccess ? "Đã tải lại dữ liệu từ Firebase." : "Đã dùng dữ liệu live từ Firebase.", "success");
       return;
     }

@@ -95,4 +95,5 @@ Sau đó:
 2. Đăng nhập bằng tài khoản admin.
 3. Vào `/quan-tri/`.
 4. Nếu Firestore đang trống, web sẽ tự đưa toàn bộ sản phẩm cũ lên Firebase theo từng mẻ. Chỉ cần để trang mở và chờ trạng thái báo xong.
-5. Sau đó mẹ chỉ cần bấm `Thêm sản phẩm`, chọn ảnh, nhập tên, nhập giá và bấm `Lưu lên web`.
+5. Nếu sản phẩm cũ vẫn đang dùng ảnh local, web sẽ tự đưa ảnh cũ lên ImageKit theo từng mẻ rồi cập nhật lại link ảnh trong Firestore.
+6. Sau đó mẹ chỉ cần bấm `Thêm sản phẩm`, chọn ảnh, nhập tên, nhập giá và bấm `Lưu lên web`.
