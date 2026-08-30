@@ -3,8 +3,8 @@ window.recoveredProducts = [
     "id": "307144",
     "title": "Hòa phát ATH5115",
     "code": "ATH5115",
-    "price": 7630000,
-    "priceText": "7.630.000 VNĐ",
+    "price": 7630001,
+    "priceText": "7.630.001 VNĐ",
     "vatPrice": "8.393.000 VNĐ (Đã bao gồm VAT)",
     "size": "W5100x D1500 x H750 mm",
     "warranty": "Sản phẩm bảo hành 12 tháng",
@@ -14,7 +14,12 @@ window.recoveredProducts = [
     "category": "ban",
     "badge": "Bàn họp",
     "sourceUrl": "http://noithatduchuy.eportal.vn/san_pham/ban_hop/ban_hop_atnew/productid/307144/moduleid/519187/hoa-phat-ath5115",
-    "popularity": 219
+    "popularity": 219,
+    "published": true,
+    "slug": "hoa-phat-ath5115-ath5115",
+    "detailPath": "san-pham/hoa-phat-ath5115-ath5115-307144/",
+    "createdAt": "2026-08-30T14:56:47.124Z",
+    "updatedAt": "2026-08-30T14:56:47.124Z"
   },
   {
     "id": "307145",
