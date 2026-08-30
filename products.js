@@ -19,7 +19,7 @@ window.recoveredProducts = [
     "slug": "hoa-phat-ath5115-ath5115",
     "detailPath": "san-pham/hoa-phat-ath5115-ath5115-307144/",
     "createdAt": "2026-08-30T14:56:47.124Z",
-    "updatedAt": "2026-08-30T15:02:39.676Z"
+    "updatedAt": "2026-08-30T15:02:42.014Z"
   },
   {
     "id": "307145",
