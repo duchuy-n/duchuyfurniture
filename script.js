@@ -83,7 +83,7 @@ function compactText(value, maxLength = 185) {
 }
 
 const productGrid = document.querySelector("#productGrid");
-let recoveredProducts = Array.isArray(window.recoveredProducts) ? window.recoveredProducts : [];
+let recoveredProducts = Array.isArray(window.recoveredProducts) ? window.recoveredProducts.filter((product) => product.published !== false) : [];
 const tabs = Array.from(document.querySelectorAll(".category-tab"));
 const search = document.querySelector("#productSearch");
 const sort = document.querySelector("#productSort");

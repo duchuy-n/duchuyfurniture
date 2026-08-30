@@ -1,5 +1,3 @@
-const CHANGE_KEY = "dhf_admin_changed_ids_v2";
-const SEED_OFFSET_KEY = "dhf_admin_seed_offset_v1";
 const money = new Intl.NumberFormat("vi-VN", {
   style: "currency",
   currency: "VND",
@@ -11,8 +9,6 @@ let products = originalProducts.map(cloneProduct);
 let changedIds = new Set();
 let selectedId = products[0]?.id || null;
 let cloudReady = false;
-let autoSeedAttempted = false;
-let autoImageMigrationAttempted = false;
 
 const list = document.querySelector("#adminProductList");
 const form = document.querySelector("#productEditorForm");
@@ -28,10 +24,6 @@ const statPriced = document.querySelector("#statPriced");
 const statImages = document.querySelector("#statImages");
 const statDraft = document.querySelector("#statDraft");
 const reloadButton = document.querySelector("#reloadButton");
-
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function cloneProduct(product) {
   return JSON.parse(JSON.stringify(product || {}));
@@ -267,7 +259,7 @@ async function resizeImageFile(file) {
 async function uploadSelectedImage(file) {
   if (!file) return;
   if (!cloudReady) {
-    setStatus("Chưa kết nối dữ liệu nên chưa tải ảnh lên được.", "warn");
+    setStatus("Chưa tải được danh sách sản phẩm nên chưa tải ảnh lên được.", "warn");
     return;
   }
 
@@ -299,132 +291,18 @@ async function uploadSelectedImage(file) {
 }
 
 
-function isLegacyLocalImage(image) {
-  const value = String(image || "").trim();
-  if (!value) return false;
-  if (value.startsWith("http") || value.startsWith("//") || value.startsWith("data:")) return false;
-  const clean = value.replace(/^\.\//, "").replace(/^\.\.\//, "");
-  return clean.startsWith("assets/") || clean.startsWith("crawl-output/");
-}
-
-function legacyImageCount() {
-  return products.filter((product) => product.published !== false && isLegacyLocalImage(product.image)).length;
-}
-
-async function autoMigrateLegacyImages() {
-  const startingCount = legacyImageCount();
-  if (!startingCount || autoImageMigrationAttempted) return false;
-  autoImageMigrationAttempted = true;
-  setBusy(true);
-
-  try {
-    let remaining = startingCount;
-    let migratedTotal = 0;
-    while (remaining > 0) {
-      setStatus(`Đang đưa ảnh cũ lên ImageKit: còn khoảng ${remaining.toLocaleString("vi-VN")} ảnh...`, "info");
-      const data = await fetchJson("../api/products-migrate-images", {
-        method: "POST",
-        body: JSON.stringify({ limit: 30 })
-      });
-      migratedTotal += Number(data.migrated || 0);
-      remaining = Number(data.remaining || 0);
-
-      if (Array.isArray(data.failed) && data.failed.length && Number(data.migrated || 0) === 0) {
-        setStatus("Một số ảnh cũ chưa đưa lên ImageKit được. Web vẫn dùng ảnh local, bạn có thể thử Làm mới sau.", "warn");
-        return false;
-      }
-
-      if (data.done) break;
-    }
-
-    setStatus(`Đã đưa ${migratedTotal.toLocaleString("vi-VN")} ảnh cũ lên ImageKit. Đang tải lại dữ liệu...`, "success");
-    await loadProductsFromCloud(true);
-    return true;
-  } catch (error) {
-    if (error.status === 401) {
-      window.location.href = "../dang-nhap/";
-      return true;
-    }
-    const message = error.status === 503
-      ? "Chưa cấu hình ImageKit. Thêm IMAGEKIT_PRIVATE_KEY trên Vercel rồi redeploy."
-      : "Chưa đưa ảnh cũ lên ImageKit được. Web vẫn dùng ảnh local, có thể thử lại sau.";
-    setStatus(message, "warn");
-    return false;
-  } finally {
-    setBusy(false);
-  }
-}
-async function autoSeedLegacyProducts(startOffset = Number(localStorage.getItem(SEED_OFFSET_KEY) || 0)) {
-  if (autoSeedAttempted) return;
-  autoSeedAttempted = true;
-  setBusy(true);
-  let offset = Math.max(0, Number(startOffset) || 0);
-  let total = originalProducts.length;
-  try {
-    while (offset !== null) {
-      setStatus(`Lần đầu đang tự đưa sản phẩm cũ lên Firebase: ${offset.toLocaleString("vi-VN")}/${total.toLocaleString("vi-VN")}...`, "info");
-      const data = await fetchJson("../api/products-seed", {
-        method: "POST",
-        body: JSON.stringify({ offset, limit: 20 })
-      });
-      total = Number(data.total || total);
-      offset = data.nextOffset;
-      if (offset !== null) localStorage.setItem(SEED_OFFSET_KEY, String(offset));
-      else localStorage.removeItem(SEED_OFFSET_KEY);
-      if (offset !== null) await wait(1800);
-    }
-    setStatus(`Đã tự đưa ${total.toLocaleString("vi-VN")} sản phẩm cũ lên Firebase. Đang tải lại dữ liệu...`, "success");
-    await loadProductsFromCloud(true);
-  } catch (error) {
-    if (error.status === 401) {
-      window.location.href = "../dang-nhap/";
-      return;
-    }
-    if (error.status === 429) {
-      autoSeedAttempted = false;
-      setStatus("Đã tải đủ sản phẩm. Firebase đang tạm bận, web sẽ đồng bộ sản phẩm cũ sau.", "success");
-      return;
-    }
-    setStatus("Chưa tự đưa sản phẩm cũ lên Firebase được. Kiểm tra biến Firebase trên Vercel rồi redeploy.", "warn");
-  } finally {
-    setBusy(false);
-  }
-}
-
 async function loadProductsFromCloud(showSuccess = false) {
-  setStatus("Đang tải dữ liệu sản phẩm...", "info");
+  setStatus("Đang tải danh sách sản phẩm...", "info");
   try {
     const data = await fetchJson("../api/products");
     cloudReady = true;
-    if (Array.isArray(data.products) && data.products.length && !data.fallback) {
-      products = data.products.map(cloneProduct);
-      selectedId = products[0]?.id || null;
-      changedIds = new Set();
-      updateStats();
-      renderList();
-      fillForm(selectedProduct());
-      if (products.length < originalProducts.length && !autoSeedAttempted) {
-        await autoSeedLegacyProducts(products.length);
-        return;
-      }
-      if (legacyImageCount() && !autoImageMigrationAttempted) {
-        await autoMigrateLegacyImages();
-        return;
-      }
-      setStatus(showSuccess ? "Đã tải lại dữ liệu từ Firebase." : "Đã dùng dữ liệu live từ Firebase.", "success");
-      return;
-    }
-
     products = Array.isArray(data.products) && data.products.length ? data.products.map(cloneProduct) : originalProducts.map(cloneProduct);
     selectedId = products[0]?.id || null;
+    changedIds = new Set();
     updateStats();
     renderList();
     fillForm(selectedProduct());
-    if (data.fallback) {
-      setStatus("Đã tải đủ sản phẩm. Trang quản trị đang dùng dữ liệu dự phòng ổn định; Firebase sẽ dùng lại khi sẵn sàng.", "success");
-      return;
-    }
-    await autoSeedLegacyProducts();
+    setStatus(showSuccess ? "Đã tải lại danh sách sản phẩm." : "Đã tải đủ sản phẩm. Khi lưu, GitHub sẽ cập nhật và Vercel tự deploy bản mới.", "success");
   } catch (error) {
     cloudReady = false;
     products = originalProducts.map(cloneProduct);
@@ -432,16 +310,7 @@ async function loadProductsFromCloud(showSuccess = false) {
     updateStats();
     renderList();
     fillForm(selectedProduct());
-    if (error.status === 429) {
-      cloudReady = true;
-      setStatus("Đã tải đủ sản phẩm. Trang quản trị đang dùng dữ liệu dự phòng ổn định; Firebase sẽ dùng lại khi sẵn sàng.", "success");
-      autoSeedAttempted = false;
-      return;
-    }
-    const message = error.status === 503
-      ? "Chưa cấu hình Firebase trên Vercel. Thêm biến Firebase rồi redeploy, sản phẩm cũ sẽ tự đồng bộ."
-      : "Chưa tải được Firebase, đang dùng dữ liệu dự phòng từ file cũ.";
-    setStatus(message, "warn");
+    setStatus("Đang dùng dữ liệu trong bản deploy hiện tại. Nếu muốn lưu mới, kiểm tra GitHub token trên Vercel.", "warn");
   }
 }
 
@@ -455,12 +324,12 @@ async function saveCurrentProduct() {
   }
   const updated = productFromForm(existing || {});
   if (!cloudReady) {
-    setStatus("Chưa kết nối Firebase nên chưa lưu live được. Hãy cấu hình Firebase trên Vercel trước.", "warn");
+    setStatus("Chưa kết nối được API lưu sản phẩm. Kiểm tra cấu hình GitHub token trên Vercel trước.", "warn");
     return;
   }
 
   setBusy(true);
-  setStatus("Đang lưu sản phẩm lên web...", "info");
+  setStatus("Đang lưu sản phẩm vào GitHub. Vercel sẽ tự deploy sau đó...", "info");
   try {
     const data = await fetchJson("../api/products", {
       method: "POST",
@@ -475,13 +344,13 @@ async function saveCurrentProduct() {
     updateStats();
     renderList();
     fillForm(saved);
-    setStatus(`Đã lưu lên web: ${saved.title}`, "success");
+    setStatus(`Đã lưu vào GitHub: ${saved.title}. Đợi Vercel deploy rồi khách sẽ thấy bản mới.`, "success");
   } catch (error) {
     if (error.status === 401) {
       window.location.href = "../dang-nhap/";
       return;
     }
-    setStatus("Chưa lưu được. Kiểm tra lại Firebase env vars hoặc thử đăng nhập lại.", "warn");
+    setStatus("Chưa lưu được. Kiểm tra GITHUB_TOKEN trên Vercel hoặc thử đăng nhập lại.", "warn");
   } finally {
     setBusy(false);
   }
@@ -533,10 +402,10 @@ async function hideCurrentProduct() {
   const current = selectedProduct();
   if (!current) return;
   if (!cloudReady) {
-    setStatus("Chưa kết nối Firebase nên chưa ẩn sản phẩm live được.", "warn");
+    setStatus("Chưa kết nối được API lưu sản phẩm nên chưa ẩn được.", "warn");
     return;
   }
-  const confirmed = window.confirm(`Ẩn "${current.title}" khỏi web? Có thể bật lại trong Firebase nếu cần.`);
+  const confirmed = window.confirm(`Ẩn "${current.title}" khỏi web sau lần deploy tiếp theo?`);
   if (!confirmed) return;
 
   setBusy(true);
@@ -549,13 +418,13 @@ async function hideCurrentProduct() {
     updateStats();
     renderList();
     fillForm(selectedProduct());
-    setStatus("Đã ẩn sản phẩm khỏi dữ liệu live.", "success");
+    setStatus("Đã ẩn sản phẩm trong GitHub. Đợi Vercel deploy rồi khách sẽ không thấy nữa.", "success");
   } catch (error) {
     if (error.status === 401) {
       window.location.href = "../dang-nhap/";
       return;
     }
-    setStatus("Chưa ẩn được sản phẩm. Kiểm tra Firebase hoặc thử đăng nhập lại.", "warn");
+    setStatus("Chưa ẩn được sản phẩm. Kiểm tra GITHUB_TOKEN hoặc thử đăng nhập lại.", "warn");
   } finally {
     setBusy(false);
   }

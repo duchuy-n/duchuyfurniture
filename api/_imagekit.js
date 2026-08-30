@@ -1,4 +1,4 @@
-const { slugify } = require("./_firestore");
+const { slugify } = require("./_catalog");
 
 const IMAGEKIT_UPLOAD_URL = "https://upload.imagekit.io/api/v1/files/upload";
 
