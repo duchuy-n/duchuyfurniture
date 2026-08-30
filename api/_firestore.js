@@ -6,6 +6,20 @@ const FIRESTORE_SCOPE = "https://www.googleapis.com/auth/datastore";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 let cachedToken = null;
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function retryDelayMs(response, attempt) {
+  const retryAfter = Number(response.headers.get("retry-after") || 0);
+  if (retryAfter > 0) return Math.min(retryAfter * 1000, 8000);
+  return Math.min(8000, 500 * 2 ** attempt);
+}
+
+function shouldRetryFirestoreStatus(status) {
+  return status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+}
+
 function firestoreConfig() {
   return {
     projectId: process.env.FIREBASE_PROJECT_ID || "",
@@ -113,18 +127,32 @@ function firestoreBaseUrl() {
 }
 
 async function firestoreFetch(url, options = {}) {
-  const token = await getAccessToken();
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    }
-  });
+  const maxAttempts = Number(options.maxAttempts || 5);
+  const fetchOptions = { ...options };
+  delete fetchOptions.maxAttempts;
 
-  if (!response.ok) {
-    const error = new Error(`firestore_${response.status}`);
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const token = await getAccessToken();
+    const response = await fetch(url, {
+      ...fetchOptions,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...(fetchOptions.headers || {})
+      }
+    });
+
+    if (response.ok) {
+      if (response.status === 204) return null;
+      return response.json();
+    }
+
+    if (shouldRetryFirestoreStatus(response.status) && attempt < maxAttempts - 1) {
+      await sleep(retryDelayMs(response, attempt));
+      continue;
+    }
+
+    const error = new Error(response.status === 429 ? "firestore_rate_limited" : `firestore_${response.status}`);
     error.statusCode = response.status;
     try {
       error.details = await response.json();
@@ -134,8 +162,9 @@ async function firestoreFetch(url, options = {}) {
     throw error;
   }
 
-  if (response.status === 204) return null;
-  return response.json();
+  const error = new Error("firestore_retry_failed");
+  error.statusCode = 503;
+  throw error;
 }
 
 function slugify(value) {
@@ -272,7 +301,7 @@ async function hideProduct(id) {
 
 async function batchUpsertProducts(products) {
   const chunks = [];
-  for (let i = 0; i < products.length; i += 400) chunks.push(products.slice(i, i + 400));
+  for (let i = 0; i < products.length; i += 60) chunks.push(products.slice(i, i + 60));
   let written = 0;
   for (const chunk of chunks) {
     const writes = chunk.map((product) => {
@@ -289,6 +318,7 @@ async function batchUpsertProducts(products) {
       body: JSON.stringify({ writes })
     });
     written += chunk.length;
+    if (chunks.length > 1) await sleep(250);
   }
   return written;
 }

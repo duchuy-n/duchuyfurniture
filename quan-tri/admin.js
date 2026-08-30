@@ -28,6 +28,10 @@ const statImages = document.querySelector("#statImages");
 const statDraft = document.querySelector("#statDraft");
 const reloadButton = document.querySelector("#reloadButton");
 
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function cloneProduct(product) {
   return JSON.parse(JSON.stringify(product || {}));
 }
@@ -349,21 +353,22 @@ async function autoMigrateLegacyImages() {
     setBusy(false);
   }
 }
-async function autoSeedLegacyProducts() {
+async function autoSeedLegacyProducts(startOffset = 0) {
   if (autoSeedAttempted) return;
   autoSeedAttempted = true;
   setBusy(true);
-  let offset = 0;
+  let offset = Math.max(0, Number(startOffset) || 0);
   let total = originalProducts.length;
   try {
     while (offset !== null) {
       setStatus(`Lần đầu đang tự đưa sản phẩm cũ lên Firebase: ${offset.toLocaleString("vi-VN")}/${total.toLocaleString("vi-VN")}...`, "info");
       const data = await fetchJson("../api/products-seed", {
         method: "POST",
-        body: JSON.stringify({ offset, limit: 250 })
+        body: JSON.stringify({ offset, limit: 60 })
       });
       total = Number(data.total || total);
       offset = data.nextOffset;
+      if (offset !== null) await wait(900);
     }
     setStatus(`Đã tự đưa ${total.toLocaleString("vi-VN")} sản phẩm cũ lên Firebase. Đang tải lại dữ liệu...`, "success");
     await loadProductsFromCloud(true);
@@ -372,7 +377,8 @@ async function autoSeedLegacyProducts() {
       window.location.href = "../dang-nhap/";
       return;
     }
-    setStatus("Chưa tự đưa sản phẩm cũ lên Firebase được. Kiểm tra biến Firebase trên Vercel rồi redeploy.", "warn");
+    const message = error.status === 429 ? "Firebase đang giới hạn tạm thời. Đợi 1-2 phút rồi bấm Làm mới để tiếp tục đồng bộ." : "Chưa tự đưa sản phẩm cũ lên Firebase được. Kiểm tra biến Firebase trên Vercel rồi redeploy.";
+    setStatus(message, "warn");
   } finally {
     setBusy(false);
   }
@@ -390,6 +396,10 @@ async function loadProductsFromCloud(showSuccess = false) {
       updateStats();
       renderList();
       fillForm(selectedProduct());
+      if (products.length < originalProducts.length && !autoSeedAttempted) {
+        await autoSeedLegacyProducts(products.length);
+        return;
+      }
       if (legacyImageCount() && !autoImageMigrationAttempted) {
         await autoMigrateLegacyImages();
         return;
@@ -413,7 +423,9 @@ async function loadProductsFromCloud(showSuccess = false) {
     fillForm(selectedProduct());
     const message = error.status === 503
       ? "Chưa cấu hình Firebase trên Vercel. Thêm biến Firebase rồi redeploy, sản phẩm cũ sẽ tự đồng bộ."
-      : "Chưa tải được Firebase, đang dùng dữ liệu dự phòng từ file cũ.";
+      : error.status === 429
+        ? "Firebase đang giới hạn tạm thời. Đợi 1-2 phút rồi bấm Làm mới để tiếp tục."
+        : "Chưa tải được Firebase, đang dùng dữ liệu dự phòng từ file cũ.";
     setStatus(message, "warn");
   }
 }

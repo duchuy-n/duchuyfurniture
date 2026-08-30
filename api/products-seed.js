@@ -19,7 +19,7 @@ module.exports = async function handler(req, res) {
     const body = req.body === undefined ? {} : await readJson(req);
     const allProducts = readStaticProducts();
     const offset = Math.max(0, Number(body.offset) || 0);
-    const limit = Math.min(300, Math.max(50, Number(body.limit) || 250));
+    const limit = Math.min(80, Math.max(20, Number(body.limit) || 60));
     const chunk = allProducts.slice(offset, offset + limit);
     const written = chunk.length ? await batchUpsertProducts(chunk) : 0;
     const nextOffset = offset + written;
