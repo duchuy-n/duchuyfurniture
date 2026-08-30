@@ -125,12 +125,50 @@ async function githubRequest(url, options = {}) {
   return data;
 }
 
+async function fetchGithubRawFile(downloadUrl) {
+  const config = githubConfig();
+  const response = await fetch(downloadUrl, {
+    headers: {
+      Authorization: `Bearer ${config.token}`,
+      Accept: "application/vnd.github.raw",
+      "User-Agent": "duchuyfurniture-admin"
+    }
+  });
+
+  if (!response.ok) {
+    const error = new Error(`github_raw_${response.status}`);
+    error.statusCode = 502;
+    throw error;
+  }
+
+  return response.text();
+}
+
 async function readGithubProductsFile() {
   const config = githubConfig();
   const url = `https://api.github.com/repos/${encodeURIComponent(config.owner)}/${encodeURIComponent(config.repo)}/contents/${PRODUCTS_FILE}?ref=${encodeURIComponent(config.branch)}`;
   const data = await githubRequest(url);
-  const content = Buffer.from(String(data.content || "").replace(/\s/g, ""), "base64").toString("utf8");
-  return { sha: data.sha, content, products: parseProductsJs(content) };
+  let content = "";
+
+  if (data.encoding === "base64" && data.content) {
+    content = Buffer.from(String(data.content).replace(/\s/g, ""), "base64").toString("utf8");
+  } else if (data.download_url) {
+    content = await fetchGithubRawFile(data.download_url);
+  }
+
+  if (!content) {
+    const error = new Error("github_products_empty");
+    error.statusCode = 502;
+    error.details = { encoding: data.encoding || "", size: data.size || 0, hasDownloadUrl: Boolean(data.download_url) };
+    throw error;
+  }
+
+  try {
+    return { sha: data.sha, content, products: parseProductsJs(content) };
+  } catch (error) {
+    error.details = { encoding: data.encoding || "", size: data.size || 0, contentStart: content.slice(0, 40) };
+    throw error;
+  }
 }
 
 async function commitProductsToGithub(products, message, sha) {
