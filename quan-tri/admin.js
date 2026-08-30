@@ -1,4 +1,5 @@
 const CHANGE_KEY = "dhf_admin_changed_ids_v2";
+const SEED_OFFSET_KEY = "dhf_admin_seed_offset_v1";
 const money = new Intl.NumberFormat("vi-VN", {
   style: "currency",
   currency: "VND",
@@ -353,7 +354,7 @@ async function autoMigrateLegacyImages() {
     setBusy(false);
   }
 }
-async function autoSeedLegacyProducts(startOffset = 0) {
+async function autoSeedLegacyProducts(startOffset = Number(localStorage.getItem(SEED_OFFSET_KEY) || 0)) {
   if (autoSeedAttempted) return;
   autoSeedAttempted = true;
   setBusy(true);
@@ -368,7 +369,9 @@ async function autoSeedLegacyProducts(startOffset = 0) {
       });
       total = Number(data.total || total);
       offset = data.nextOffset;
-      if (offset !== null) await wait(900);
+      if (offset !== null) localStorage.setItem(SEED_OFFSET_KEY, String(offset));
+      else localStorage.removeItem(SEED_OFFSET_KEY);
+      if (offset !== null) await wait(1200);
     }
     setStatus(`Đã tự đưa ${total.toLocaleString("vi-VN")} sản phẩm cũ lên Firebase. Đang tải lại dữ liệu...`, "success");
     await loadProductsFromCloud(true);
@@ -421,11 +424,16 @@ async function loadProductsFromCloud(showSuccess = false) {
     updateStats();
     renderList();
     fillForm(selectedProduct());
+    if (error.status === 429) {
+      cloudReady = true;
+      setStatus("Firebase đang giới hạn đọc tạm thời. Web sẽ thử đồng bộ tiếp chậm hơn bằng dữ liệu dự phòng.", "warn");
+      await wait(2500);
+      await autoSeedLegacyProducts();
+      return;
+    }
     const message = error.status === 503
       ? "Chưa cấu hình Firebase trên Vercel. Thêm biến Firebase rồi redeploy, sản phẩm cũ sẽ tự đồng bộ."
-      : error.status === 429
-        ? "Firebase đang giới hạn tạm thời. Đợi 1-2 phút rồi bấm Làm mới để tiếp tục."
-        : "Chưa tải được Firebase, đang dùng dữ liệu dự phòng từ file cũ.";
+      : "Chưa tải được Firebase, đang dùng dữ liệu dự phòng từ file cũ.";
     setStatus(message, "warn");
   }
 }
