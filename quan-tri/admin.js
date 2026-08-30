@@ -218,6 +218,7 @@ async function fetchJson(url, options = {}) {
   if (!response.ok) {
     const error = new Error(data?.error || `request_${response.status}`);
     error.status = response.status;
+    error.details = data?.details || null;
     throw error;
   }
   return data;
@@ -314,6 +315,25 @@ async function loadProductsFromCloud(showSuccess = false) {
   }
 }
 
+function githubSaveErrorMessage(error) {
+  const code = error?.message || "";
+  if (code === "github_not_configured") {
+    return "Thiếu GITHUB_TOKEN trên Vercel hoặc bạn chưa Redeploy sau khi thêm biến.";
+  }
+  if (code === "github_401") {
+    return "GITHUB_TOKEN sai, hết hạn hoặc copy thiếu. Tạo token mới rồi nhập lại trên Vercel.";
+  }
+  if (code === "github_403") {
+    return "Token chưa có quyền sửa repo. Kiểm tra repo đã chọn đúng và Contents phải là Read and write.";
+  }
+  if (code === "github_404") {
+    return "Token không thấy repo hoặc branch. Kiểm tra GITHUB_OWNER, GITHUB_REPO, GITHUB_BRANCH và repo access của token.";
+  }
+  if (code === "github_conflict" || error?.status === 409) {
+    return "GitHub vừa có thay đổi mới. Bấm Làm mới rồi lưu lại lần nữa.";
+  }
+  return "Chưa lưu được. Kiểm tra GITHUB_TOKEN trên Vercel hoặc thử đăng nhập lại.";
+}
 async function saveCurrentProduct() {
   const existing = selectedProduct();
   const titleInput = form.elements.title.value.trim();
@@ -350,7 +370,7 @@ async function saveCurrentProduct() {
       window.location.href = "../dang-nhap/";
       return;
     }
-    setStatus("Chưa lưu được. Kiểm tra GITHUB_TOKEN trên Vercel hoặc thử đăng nhập lại.", "warn");
+    setStatus(githubSaveErrorMessage(error), "warn");
   } finally {
     setBusy(false);
   }
@@ -424,7 +444,7 @@ async function hideCurrentProduct() {
       window.location.href = "../dang-nhap/";
       return;
     }
-    setStatus("Chưa ẩn được sản phẩm. Kiểm tra GITHUB_TOKEN hoặc thử đăng nhập lại.", "warn");
+    setStatus(githubSaveErrorMessage(error), "warn");
   } finally {
     setBusy(false);
   }
