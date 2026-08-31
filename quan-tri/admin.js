@@ -7,10 +7,12 @@ const money = new Intl.NumberFormat("vi-VN", {
 const originalProducts = Array.isArray(window.recoveredProducts) ? window.recoveredProducts : [];
 let products = originalProducts.map(cloneProduct);
 let changedIds = new Set();
-let selectedId = products[0]?.id || null;
+let activeView = "visible";
+let selectedId = products.find((product) => product.published !== false)?.id || products[0]?.id || null;
 let cloudReady = false;
 let formDirty = false;
 let suppressDirty = false;
+let busy = false;
 
 const list = document.querySelector("#adminProductList");
 const form = document.querySelector("#productEditorForm");
@@ -24,8 +26,19 @@ const productImagePreview = document.querySelector("#productImagePreview");
 const statTotal = document.querySelector("#statTotal");
 const statPriced = document.querySelector("#statPriced");
 const statImages = document.querySelector("#statImages");
+const statHidden = document.querySelector("#statHidden");
 const statDraft = document.querySelector("#statDraft");
+const visibleCount = document.querySelector("#visibleCount");
+const hiddenCount = document.querySelector("#hiddenCount");
 const reloadButton = document.querySelector("#reloadButton");
+const newProductButton = document.querySelector("#newProductButton");
+const duplicateButton = document.querySelector("#duplicateButton");
+const deleteButton = document.querySelector("#deleteButton");
+const restoreButton = document.querySelector("#restoreButton");
+const hardDeleteButton = document.querySelector("#hardDeleteButton");
+const saveButton = document.querySelector("#saveButton");
+const hiddenProductNote = document.querySelector("#hiddenProductNote");
+const viewTabs = Array.from(document.querySelectorAll(".admin-view-tab"));
 
 function cloneProduct(product) {
   return JSON.parse(JSON.stringify(product || {}));
@@ -97,13 +110,21 @@ function productSearchText(product) {
   ].join(" "));
 }
 
+function isHiddenProduct(product) {
+  return product?.published === false;
+}
+
+function matchesActiveView(product) {
+  return activeView === "hidden" ? isHiddenProduct(product) : !isHiddenProduct(product);
+}
+
 function filteredProducts() {
   const query = normalizeText(search?.value || "");
   const cat = category?.value || "all";
   return products.filter((product) => {
     const matchesCategory = cat === "all" || product.category === cat;
     const matchesQuery = !query || productSearchText(product).includes(query);
-    return matchesCategory && matchesQuery && product.published !== false;
+    return matchesCategory && matchesQuery && matchesActiveView(product);
   });
 }
 
@@ -113,45 +134,104 @@ function setStatus(text, type = "info") {
   status.dataset.type = type;
 }
 
-function setBusy(isBusy) {
+function selectedProduct() {
+  return products.find((product) => String(product.id) === String(selectedId)) || null;
+}
+
+function updateEditorMode() {
+  const current = selectedProduct();
+  const isHidden = isHiddenProduct(current);
   form?.querySelectorAll("button, input, select, textarea").forEach((control) => {
-    control.disabled = isBusy;
+    control.disabled = busy || !current;
   });
-  if (reloadButton) reloadButton.disabled = isBusy;
+  if (reloadButton) reloadButton.disabled = busy;
+  if (newProductButton) newProductButton.disabled = busy;
+  if (duplicateButton) duplicateButton.disabled = busy || !current;
+  if (saveButton) saveButton.textContent = isHidden ? "Lưu thông tin ẩn" : "Lưu lên web";
+  if (deleteButton) deleteButton.hidden = !current || isHidden;
+  if (restoreButton) restoreButton.hidden = !current || !isHidden;
+  if (hardDeleteButton) hardDeleteButton.hidden = !current || !isHidden;
+  if (hiddenProductNote) hiddenProductNote.hidden = !current || !isHidden;
+  form?.classList.toggle("is-empty", !current);
+}
+
+function setBusy(isBusy) {
+  busy = isBusy;
+  updateEditorMode();
 }
 
 function updateStats() {
-  const published = products.filter((item) => item.published !== false);
+  const published = products.filter((item) => !isHiddenProduct(item));
+  const hidden = products.filter((item) => isHiddenProduct(item));
   statTotal.textContent = published.length.toLocaleString("vi-VN");
   statPriced.textContent = published.filter((item) => Number(item.price) > 0).length.toLocaleString("vi-VN");
   statImages.textContent = published.filter((item) => item.image).length.toLocaleString("vi-VN");
+  if (statHidden) statHidden.textContent = hidden.length.toLocaleString("vi-VN");
   statDraft.textContent = changedIds.size.toLocaleString("vi-VN");
+  if (visibleCount) visibleCount.textContent = published.length.toLocaleString("vi-VN");
+  if (hiddenCount) hiddenCount.textContent = hidden.length.toLocaleString("vi-VN");
+}
+
+function updateViewTabs() {
+  viewTabs.forEach((tab) => {
+    const isActive = tab.dataset.view === activeView;
+    tab.classList.toggle("active", isActive);
+    tab.setAttribute("aria-selected", String(isActive));
+  });
+}
+
+function ensureSelectedForView(items = filteredProducts()) {
+  const current = selectedProduct();
+  if (current && matchesActiveView(current) && items.some((product) => String(product.id) === String(current.id))) return;
+  selectedId = items[0]?.id || null;
 }
 
 function renderList() {
   const items = filteredProducts();
-  const publishedCount = products.filter((item) => item.published !== false).length;
-  if (count) count.textContent = `Hiển thị ${items.length.toLocaleString("vi-VN")} / ${publishedCount.toLocaleString("vi-VN")} sản phẩm`;
+  ensureSelectedForView(items);
+  const viewTotal = products.filter((product) => matchesActiveView(product)).length;
+  const label = activeView === "hidden" ? "sản phẩm đã ẩn/đã xóa" : "sản phẩm đang bán";
+  if (count) count.textContent = `Hiển thị ${items.length.toLocaleString("vi-VN")} / ${viewTotal.toLocaleString("vi-VN")} ${label}`;
+  updateStats();
+  updateViewTabs();
+  updateEditorMode();
   if (!list) return;
 
+  if (!items.length) {
+    list.innerHTML = `<div class="admin-empty-list">${activeView === "hidden" ? "Chưa có sản phẩm nào bị ẩn hoặc xóa." : "Không tìm thấy sản phẩm phù hợp."}</div>`;
+    return;
+  }
+
   list.innerHTML = items.map((product) => `
-    <button class="admin-product-item${String(product.id) === String(selectedId) ? " active" : ""}" type="button" data-id="${escapeHtml(product.id)}">
+    <button class="admin-product-item${String(product.id) === String(selectedId) ? " active" : ""}${isHiddenProduct(product) ? " is-hidden" : ""}" type="button" data-id="${escapeHtml(product.id)}">
       <img src="${escapeHtml(imageSrc(product.image))}" alt="${escapeHtml(product.title || "Sản phẩm")}" loading="lazy">
       <span>
         <strong>${escapeHtml(product.title || "Sản phẩm chưa đặt tên")}</strong>
         <span>${escapeHtml(product.priceText || formatPrice(product.price))}</span>
         <small>${escapeHtml(product.code || "Chưa có mã")} · ${escapeHtml(product.badge || product.categoryPath || "Chưa phân loại")}</small>
+        ${isHiddenProduct(product) ? `<em class="admin-state-badge">Đã ẩn khỏi web</em>` : ""}
       </span>
     </button>
   `).join("");
 }
 
-function selectedProduct() {
-  return products.find((product) => String(product.id) === String(selectedId)) || products.find((product) => product.published !== false) || null;
+function clearForm() {
+  if (!form) return;
+  suppressDirty = true;
+  form.reset();
+  form.elements.image.value = "";
+  if (productImagePreview) productImagePreview.src = imageSrc("");
+  renderPreview(null);
+  formDirty = false;
+  suppressDirty = false;
+  updateEditorMode();
 }
 
 function fillForm(product) {
-  if (!form || !product) return;
+  if (!form || !product) {
+    clearForm();
+    return;
+  }
   suppressDirty = true;
   form.elements.title.value = product.title || "";
   form.elements.code.value = product.code || "";
@@ -169,6 +249,7 @@ function fillForm(product) {
   renderPreview(product);
   formDirty = false;
   suppressDirty = false;
+  updateEditorMode();
 }
 
 function productFromForm(base = {}) {
@@ -194,12 +275,16 @@ function productFromForm(base = {}) {
     sourceUrl: form.elements.sourceUrl.value.trim(),
     popularity: Number(base.popularity) || products.length + 1,
     slug: base.slug || slugify([title, code].join("-")),
-    published: true
+    published: base.published === false ? false : true
   };
 }
 
 function renderPreview(product) {
   if (!preview) return;
+  if (!product) {
+    preview.innerHTML = `<div class="admin-empty-preview">Chọn một sản phẩm bên trái hoặc bấm Thêm sản phẩm để bắt đầu.</div>`;
+    return;
+  }
   preview.innerHTML = `
     <article>
       <img src="${escapeHtml(imageSrc(product.image))}" alt="${escapeHtml(product.title || "Sản phẩm")}">
@@ -301,15 +386,14 @@ async function uploadSelectedImage(file) {
   }
 }
 
-
 async function loadProductsFromCloud(showSuccess = false) {
   setStatus("Đang tải danh sách sản phẩm...", "info");
   try {
-    const data = await fetchJson("../api/products");
+    const data = await fetchJson("../api/products?includeHidden=1");
     products = Array.isArray(data.products) && data.products.length ? data.products.map(cloneProduct) : originalProducts.map(cloneProduct);
-    selectedId = products[0]?.id || null;
+    activeView = "visible";
+    selectedId = products.find((product) => product.published !== false)?.id || products[0]?.id || null;
     changedIds = new Set();
-    updateStats();
     renderList();
     fillForm(selectedProduct());
     const canSave = await checkSaveBackendReady();
@@ -317,14 +401,13 @@ async function loadProductsFromCloud(showSuccess = false) {
   } catch (error) {
     cloudReady = false;
     products = originalProducts.map(cloneProduct);
-    selectedId = products[0]?.id || null;
-    updateStats();
+    activeView = "visible";
+    selectedId = products.find((product) => product.published !== false)?.id || products[0]?.id || null;
     renderList();
     fillForm(selectedProduct());
     setStatus("Đang dùng dữ liệu trong bản deploy hiện tại. Nếu muốn lưu mới, kiểm tra GitHub token trên Vercel.", "warn");
   }
 }
-
 
 function canDiscardDraft() {
   if (!formDirty) return true;
@@ -341,6 +424,7 @@ async function checkSaveBackendReady() {
     return false;
   }
 }
+
 function githubSaveErrorMessage(error) {
   const code = error?.message || "";
   if (code === "github_not_configured") {
@@ -360,6 +444,7 @@ function githubSaveErrorMessage(error) {
   }
   return "Chưa lưu được. Kiểm tra GITHUB_TOKEN trên Vercel hoặc thử đăng nhập lại.";
 }
+
 async function saveCurrentProduct() {
   const existing = selectedProduct();
   const titleInput = form.elements.title.value.trim();
@@ -386,7 +471,6 @@ async function saveCurrentProduct() {
     else products.unshift(saved);
     selectedId = saved.id;
     changedIds.add(String(saved.id));
-    updateStats();
     renderList();
     fillForm(saved);
     setStatus(`Đã lưu vào GitHub: ${saved.title}. Đợi Vercel deploy rồi khách sẽ thấy bản mới.`, "success");
@@ -423,6 +507,7 @@ function newProduct() {
     published: true
   };
   products.unshift(product);
+  activeView = "visible";
   selectedId = product.id;
   renderList();
   fillForm(product);
@@ -439,7 +524,9 @@ function duplicateProduct() {
   copy.id = `copy-${Date.now()}`;
   copy.title = `${copy.title || "Sản phẩm"} - bản sao`;
   copy.code = `${copy.code || "COPY"}-COPY`;
+  copy.published = true;
   products.unshift(copy);
+  activeView = "visible";
   selectedId = copy.id;
   renderList();
   fillForm(copy);
@@ -463,11 +550,76 @@ async function hideCurrentProduct() {
     await fetchJson(`../api/products?id=${encodeURIComponent(current.id)}`, { method: "DELETE" });
     products = products.map((product) => String(product.id) === String(current.id) ? { ...product, published: false } : product);
     changedIds.add(String(current.id));
-    selectedId = products.find((product) => product.published !== false)?.id || null;
-    updateStats();
+    activeView = "hidden";
+    selectedId = current.id;
     renderList();
     fillForm(selectedProduct());
-    setStatus("Đã ẩn sản phẩm trong GitHub. Đợi Vercel deploy rồi khách sẽ không thấy nữa.", "success");
+    setStatus("Đã chuyển sản phẩm sang mục Đã ẩn / đã xóa. Đợi Vercel deploy rồi khách sẽ không thấy nữa.", "success");
+  } catch (error) {
+    if (error.status === 401) {
+      window.location.href = "../dang-nhap/";
+      return;
+    }
+    setStatus(githubSaveErrorMessage(error), "warn");
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function restoreCurrentProduct() {
+  const current = selectedProduct();
+  if (!current) return;
+  if (!cloudReady) {
+    setStatus("Chưa kết nối được API lưu sản phẩm nên chưa khôi phục được.", "warn");
+    return;
+  }
+
+  setBusy(true);
+  setStatus("Đang khôi phục sản phẩm...", "info");
+  try {
+    const data = await fetchJson("../api/products", {
+      method: "PATCH",
+      body: JSON.stringify({ id: current.id, published: true })
+    });
+    const restored = data.product || { ...current, published: true };
+    products = products.map((product) => String(product.id) === String(current.id) ? restored : product);
+    changedIds.add(String(current.id));
+    activeView = "visible";
+    selectedId = restored.id;
+    renderList();
+    fillForm(restored);
+    setStatus("Đã khôi phục sản phẩm. Đợi Vercel deploy rồi khách sẽ thấy lại trên web.", "success");
+  } catch (error) {
+    if (error.status === 401) {
+      window.location.href = "../dang-nhap/";
+      return;
+    }
+    setStatus(githubSaveErrorMessage(error), "warn");
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function hardDeleteCurrentProduct() {
+  const current = selectedProduct();
+  if (!current) return;
+  if (!cloudReady) {
+    setStatus("Chưa kết nối được API lưu sản phẩm nên chưa xóa hẳn được.", "warn");
+    return;
+  }
+  const confirmed = window.confirm(`Xóa hẳn "${current.title}" khỏi dữ liệu? Việc này không khôi phục bằng nút quản trị được nữa.`);
+  if (!confirmed) return;
+
+  setBusy(true);
+  setStatus("Đang xóa hẳn sản phẩm...", "info");
+  try {
+    await fetchJson(`../api/products?id=${encodeURIComponent(current.id)}&hard=1`, { method: "DELETE" });
+    products = products.filter((product) => String(product.id) !== String(current.id));
+    changedIds.add(String(current.id));
+    selectedId = filteredProducts()[0]?.id || null;
+    renderList();
+    fillForm(selectedProduct());
+    setStatus("Đã xóa hẳn sản phẩm khỏi GitHub. Đợi Vercel deploy để cập nhật bản web mới.", "success");
   } catch (error) {
     if (error.status === 401) {
       window.location.href = "../dang-nhap/";
@@ -500,11 +652,29 @@ form?.addEventListener("submit", (event) => {
 });
 
 imageFile?.addEventListener("change", () => uploadSelectedImage(imageFile.files?.[0]));
-search?.addEventListener("input", renderList);
-category?.addEventListener("change", renderList);
-document.querySelector("#newProductButton")?.addEventListener("click", newProduct);
-document.querySelector("#duplicateButton")?.addEventListener("click", duplicateProduct);
-document.querySelector("#deleteButton")?.addEventListener("click", hideCurrentProduct);
+search?.addEventListener("input", () => {
+  renderList();
+  fillForm(selectedProduct());
+});
+category?.addEventListener("change", () => {
+  renderList();
+  fillForm(selectedProduct());
+});
+viewTabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    if (!tab.dataset.view || tab.dataset.view === activeView) return;
+    if (!canDiscardDraft()) return;
+    activeView = tab.dataset.view;
+    selectedId = null;
+    renderList();
+    fillForm(selectedProduct());
+  });
+});
+newProductButton?.addEventListener("click", newProduct);
+duplicateButton?.addEventListener("click", duplicateProduct);
+deleteButton?.addEventListener("click", hideCurrentProduct);
+restoreButton?.addEventListener("click", restoreCurrentProduct);
+hardDeleteButton?.addEventListener("click", hardDeleteCurrentProduct);
 reloadButton?.addEventListener("click", () => {
   if (!canDiscardDraft()) return;
   loadProductsFromCloud(true);
@@ -532,7 +702,6 @@ async function bootAdmin() {
   }
 
   document.body.classList.remove("admin-locked");
-  updateStats();
   renderList();
   fillForm(selectedProduct());
   await loadProductsFromCloud();

@@ -49,6 +49,7 @@
         <article><span>Tổng sản phẩm</span><strong id="statTotal">0</strong></article>
         <article><span>Có giá</span><strong id="statPriced">0</strong></article>
         <article><span>Có ảnh</span><strong id="statImages">0</strong></article>
+        <article><span>Đã ẩn / đã xóa</span><strong id="statHidden">0</strong></article>
         <article><span>Đã sửa phiên này</span><strong id="statDraft">0</strong></article>
       </section>
 
@@ -69,6 +70,14 @@
                 <option value="khac">Khác</option>
               </select>
             </label>
+            <div class="admin-view-tabs" role="tablist" aria-label="Chế độ xem sản phẩm">
+              <button class="admin-view-tab active" type="button" data-view="visible" aria-selected="true">
+                Đang bán <span id="visibleCount">0</span>
+              </button>
+              <button class="admin-view-tab" type="button" data-view="hidden" aria-selected="false">
+                Đã ẩn / đã xóa <span id="hiddenCount">0</span>
+              </button>
+            </div>
           </div>
           <div class="admin-list-actions">
             <button class="btn primary" type="button" id="newProductButton">Thêm sản phẩm</button>
@@ -162,9 +171,12 @@
             <div class="admin-preview" id="adminPreview" aria-label="Xem trước sản phẩm"></div>
 
             <div class="admin-form-actions">
-              <button class="btn primary" type="submit">Lưu lên web</button>
-              <button class="btn danger" type="button" id="deleteButton">Ẩn sản phẩm</button>
+              <button class="btn primary" type="submit" id="saveButton">Lưu lên web</button>
+              <button class="btn danger" type="button" id="deleteButton">Ẩn khỏi web</button>
+              <button class="btn success" type="button" id="restoreButton" hidden>Khôi phục sản phẩm</button>
+              <button class="btn ghost-danger" type="button" id="hardDeleteButton" hidden>Xóa hẳn</button>
             </div>
+            <p class="admin-hidden-note" id="hiddenProductNote" hidden>Sản phẩm này đang nằm trong mục đã ẩn/đã xóa, khách sẽ không thấy trên web. Bấm Khôi phục nếu muốn bán lại.</p>
           </form>
         </section>
       </section>

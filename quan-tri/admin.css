@@ -49,6 +49,18 @@
   background: var(--brand);
 }
 
+.btn.success {
+  border-color: rgba(2, 122, 72, 0.2);
+  color: #fff;
+  background: var(--green);
+}
+
+.btn.ghost-danger {
+  border-color: rgba(195, 22, 43, 0.28);
+  color: var(--brand);
+  background: #fff;
+}
+
 
 .admin-gate {
   display: grid;
@@ -135,7 +147,7 @@
 
 .admin-stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 18px;
 }
@@ -242,6 +254,57 @@
   font-weight: 800;
 }
 
+.admin-view-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-view-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.admin-view-tab span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 24px;
+  border-radius: 999px;
+  background: #eef2f7;
+  color: #344054;
+  font-size: 12px;
+}
+
+.admin-view-tab:hover,
+.admin-view-tab:focus-visible,
+.admin-view-tab.active {
+  border-color: var(--brand);
+  outline: 0;
+}
+
+.admin-view-tab.active {
+  background: var(--brand);
+  color: #fff;
+}
+
+.admin-view-tab.active span {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
 .admin-product-list {
   display: grid;
   gap: 8px;
@@ -306,6 +369,44 @@
 .admin-product-item small {
   color: var(--muted);
   font-size: 12px;
+}
+
+.admin-product-item.is-hidden {
+  background: #fff7ed;
+}
+
+.admin-state-badge {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 4px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: #ffedd5;
+  color: #9a3412;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.admin-empty-list,
+.admin-empty-preview,
+.admin-hidden-note {
+  border: 1px dashed #d0d5dd;
+  border-radius: 8px;
+  padding: 14px;
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.admin-hidden-note {
+  margin: 0;
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
 }
 
 .admin-editor-heading {
@@ -472,7 +573,8 @@
 
   .admin-stats,
   .admin-form-grid,
-  .admin-preview article {
+  .admin-preview article,
+  .admin-view-tabs {
     grid-template-columns: 1fr;
   }
 

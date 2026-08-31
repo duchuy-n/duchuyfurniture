@@ -504,14 +504,42 @@ async function upsertProduct(product) {
 }
 
 async function hideProduct(id) {
-  let hiddenProduct = null;
+  return setProductPublished(id, false);
+}
+
+async function setProductPublished(id, published) {
+  let changedProduct = null;
   await updateGithubCatalog((products) => {
     const next = products.map((product) => {
       if (String(product.id) !== String(id)) return product;
-      hiddenProduct = normalizeProduct({ ...product, published: false }, product);
-      return hiddenProduct;
+      changedProduct = normalizeProduct({ ...product, published }, product);
+      return changedProduct;
     });
-    if (!hiddenProduct) {
+    if (!changedProduct) {
+      const error = new Error("product_not_found");
+      error.statusCode = 404;
+      throw error;
+    }
+    const extraFiles = published
+      ? [detailFileForProduct(changedProduct, next), sitemapFileForProducts(next)]
+      : [
+          { path: `${detailPathForProduct(changedProduct)}index.html`, delete: true },
+          sitemapFileForProducts(next)
+        ];
+    return { products: next, extraFiles };
+  }, `${published ? "Restore" : "Hide"} product: ${id}`);
+  return changedProduct;
+}
+
+async function deleteProduct(id) {
+  let deletedProduct = null;
+  await updateGithubCatalog((products) => {
+    const next = products.filter((product) => {
+      if (String(product.id) !== String(id)) return true;
+      deletedProduct = product;
+      return false;
+    });
+    if (!deletedProduct) {
       const error = new Error("product_not_found");
       error.statusCode = 404;
       throw error;
@@ -519,14 +547,13 @@ async function hideProduct(id) {
     return {
       products: next,
       extraFiles: [
-        { path: `${detailPathForProduct(hiddenProduct)}index.html`, delete: true },
+        { path: `${detailPathForProduct(deletedProduct)}index.html`, delete: true },
         sitemapFileForProducts(next)
       ]
     };
-  }, `Hide product: ${id}`);
-  return hiddenProduct;
+  }, `Delete product: ${id}`);
+  return deletedProduct;
 }
-
 async function checkGithubStatus() {
   const config = githubConfig();
   const configured = githubConfigured(config);
@@ -569,6 +596,7 @@ module.exports = {
   formatPrice,
   formatVatPrice,
   githubConfigured,
+  deleteProduct,
   hideProduct,
   listProducts: readStaticProducts,
   normalizeProduct,
@@ -576,6 +604,7 @@ module.exports = {
   readStaticProducts,
   renderProductDetailHtml,
   serializeProductsJs,
+  setProductPublished,
   slugify,
   upsertProduct
 };
