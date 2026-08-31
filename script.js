@@ -110,7 +110,16 @@ const catalogShortcuts = [
   { label: "Nội thất trường học", filter: "khac", query: "trường học" },
   { label: "Giá sách, kệ file", filter: "tu", query: "giá" },
   { label: "Vách ngăn văn phòng", filter: "khac", query: "vách ngăn" },
-  { label: "Sản phẩm ống thép", filter: "khac", query: "ống thép" }
+  { label: "Sản phẩm ống thép", filter: "khac", query: "ống thép" },
+  { label: "Tủ lãnh đạo", filter: "all", query: "tủ lãnh đạo" },
+  { label: "Hộc di động", filter: "all", query: "hộc di động" },
+  { label: "Bàn vi tính", filter: "all", query: "bàn vi tính" },
+  { label: "Ghế da văn phòng", filter: "all", query: "ghế da" },
+  { label: "Ghế gấp", filter: "all", query: "ghế gấp" },
+  { label: "Ghế chân quỳ", filter: "all", query: "ghế chân quỳ" },
+  { label: "Nội thất hội trường", filter: "all", query: "hội trường" },
+  { label: "Bàn ăn", filter: "all", query: "bàn ăn" },
+  { label: "Sản phẩm INOX", filter: "all", query: "inox" },
 ];
 
 function searchableProduct(product) {

@@ -23,7 +23,17 @@
     "/danh-muc/ban-hoc-sinh/": { query: "bàn học sinh", category: "khac" },
     "/danh-muc/ban-cafe-van-phong/": { query: "bàn cafe", category: "ban" },
     "/danh-muc/gia-sat-van-phong/": { query: "giá sắt", fallback: false },
-    "/danh-muc/tu-quan-ao/": { query: "tủ quần áo", aliases: ["tủ quần áo", "tủ để đồ", "locker"], category: "tu", fallback: false }
+    "/danh-muc/tu-quan-ao/": { query: "tủ quần áo", aliases: ["tủ quần áo", "tủ để đồ", "locker"], category: "tu", fallback: false },
+    "/danh-muc/ghe-chan-quy/": { query: "ghế chân quỳ", aliases: ["ghế chân quỳ", "chân quỳ", "ghế họp chân quỳ"] },
+    "/danh-muc/san-pham-inox/": { query: "inox" },
+    "/danh-muc/ban-an-hoa-phat/": { query: "bàn ăn" },
+    "/danh-muc/noi-that-hoi-truong/": { query: "hội trường" },
+    "/danh-muc/ban-vi-tinh/": { query: "bàn vi tính" },
+    "/danh-muc/hoc-di-dong/": { query: "hộc di động" },
+    "/danh-muc/ghe-gap-hoa-phat/": { query: "ghế gấp" },
+    "/danh-muc/ghe-da-van-phong/": { query: "ghế da" },
+    "/danh-muc/san-pham-ong-thep/": { query: "ống thép" },
+    "/danh-muc/tu-lanh-dao/": { query: "tủ lãnh đạo" }
   };
 
   const path = `${window.location.pathname.replace(/\/+$/, "")}/`;
