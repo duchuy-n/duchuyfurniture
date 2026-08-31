@@ -544,13 +544,11 @@ async function deleteProduct(id) {
       error.statusCode = 404;
       throw error;
     }
-    return {
-      products: next,
-      extraFiles: [
-        { path: `${detailPathForProduct(deletedProduct)}index.html`, delete: true },
-        sitemapFileForProducts(next)
-      ]
-    };
+    const extraFiles = [sitemapFileForProducts(next)];
+    if (deletedProduct.published !== false) {
+      extraFiles.unshift({ path: `${detailPathForProduct(deletedProduct)}index.html`, delete: true });
+    }
+    return { products: next, extraFiles };
   }, `Delete product: ${id}`);
   return deletedProduct;
 }
