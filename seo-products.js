@@ -13,7 +13,17 @@
     "/danh-muc/ban-hop-hoa-phat/": { query: "bàn họp", category: "ban" },
     "/danh-muc/ban-giam-doc-hoa-phat/": { query: "giám đốc", category: "ban" },
     "/danh-muc/noi-that-truong-hoc/": { query: "trường học", category: "khac" },
-    "/danh-muc/vach-ngan-van-phong/": { query: "vách ngăn", category: "khac" }
+    "/danh-muc/vach-ngan-van-phong/": { query: "vách ngăn", category: "khac" },
+    "/danh-muc/tu-sat-van-phong/": { query: "tủ sắt", category: "tu" },
+    "/danh-muc/tu-go-van-phong/": { query: "tủ gỗ", category: "tu" },
+    "/danh-muc/ghe-xoay-van-phong/": { query: "ghế xoay", category: "ghe" },
+    "/danh-muc/ghe-luoi-van-phong/": { query: "ghế lưới", category: "ghe" },
+    "/danh-muc/ghe-hop-van-phong/": { query: "ghế họp", category: "ghe" },
+    "/danh-muc/tu-ho-so-van-phong/": { query: "tủ hồ sơ", category: "tu" },
+    "/danh-muc/ban-hoc-sinh/": { query: "bàn học sinh", category: "khac" },
+    "/danh-muc/ban-cafe-van-phong/": { query: "bàn cafe", category: "ban" },
+    "/danh-muc/gia-sat-van-phong/": { query: "giá sắt", fallback: false },
+    "/danh-muc/tu-quan-ao/": { query: "tủ quần áo", aliases: ["tủ quần áo", "tủ để đồ", "locker"], category: "tu", fallback: false }
   };
 
   const path = `${window.location.pathname.replace(/\/+$/, "")}/`;
@@ -74,7 +84,8 @@
     if (query === "the one") {
       return categoryOk && (text.includes("the one") || text.includes("hoa phat"));
     }
-    return categoryOk && text.includes(query);
+    const queries = Array.isArray(config.aliases) && config.aliases.length ? config.aliases.map(normalize) : [query];
+    return categoryOk && queries.some((item) => item && text.includes(item));
   }
 
   function relevantProducts() {
@@ -82,7 +93,8 @@
     const fallback = config.category
       ? window.recoveredProducts.filter((product) => product.published !== false && product.category === config.category)
       : [];
-    return (products.length ? products : fallback)
+    const useFallback = config.fallback !== false;
+    return (products.length || !useFallback ? products : fallback)
       .sort((a, b) => (Number(b.popularity) || 0) - (Number(a.popularity) || 0))
       .slice(0, 24);
   }

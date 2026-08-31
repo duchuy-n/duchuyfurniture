@@ -3,6 +3,7 @@
 !.gitignore
 !.nojekyll
 !robots.txt
+!llms.txt
 !sitemap.xml
 !generate_seo_pages.py
 !README.md
