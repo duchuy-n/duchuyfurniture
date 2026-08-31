@@ -1,27 +1,5 @@
 window.recoveredProducts = [
   {
-    "id": "new-1788140590832",
-    "title": "1",
-    "code": "SP-1788140590832",
-    "price": 2222222,
-    "priceText": "2.222.222 VNĐ",
-    "vatPrice": "2.444.444 VNĐ (Đã bao gồm VAT)",
-    "size": "Liên hệ tư vấn kích thước",
-    "warranty": "Sản phẩm bảo hành 12 tháng",
-    "description": "Liên hệ Nội thất Đức Huy để được tư vấn chi tiết.",
-    "image": "https://ik.imagekit.io/duchuyfurniture/duchuy-products/1788140602485-827346ec925e4ecfc40184bc035d3955_JgaG3-laQ.jpg",
-    "categoryPath": "san pham noi that",
-    "category": "khac",
-    "badge": "Chính hãng",
-    "sourceUrl": "",
-    "popularity": 1370,
-    "published": false,
-    "slug": "1-sp-1788140590832",
-    "detailPath": "san-pham/1-sp-1788140590832-new-1788140590832/",
-    "createdAt": "2026-08-31T01:43:41.785Z",
-    "updatedAt": "2026-08-31T02:36:56.194Z"
-  },
-  {
     "id": "307144",
     "title": "Hòa phát ATH5115",
     "code": "ATH5115",
