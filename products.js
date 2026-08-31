@@ -15,11 +15,11 @@ window.recoveredProducts = [
     "badge": "Chính hãng",
     "sourceUrl": "",
     "popularity": 1370,
-    "published": true,
+    "published": false,
     "slug": "1-sp-1788140590832",
     "detailPath": "san-pham/1-sp-1788140590832-new-1788140590832/",
     "createdAt": "2026-08-31T01:43:41.785Z",
-    "updatedAt": "2026-08-31T01:43:41.785Z"
+    "updatedAt": "2026-08-31T02:36:56.194Z"
   },
   {
     "id": "307144",
